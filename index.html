@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chit</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <!-- Header Section -->
+  <header>
+    <div id="profile-icon">
+      <img id="user-profile-pic" src="default-avatar.png" alt="Profile Icon">
+    </div>
+    <h1>Chit</h1>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <div id="welcome-message" class="hidden">
+      <p>Welcome to Chit, <span id="user-name"></span>!</p>
+    </div>
+    <div id="chat-history" class="hidden">
+      <h2>Previous Chats</h2>
+      <ul id="chat-list"></ul>
+    </div>
+  </main>
+
+  <!-- Google Sign-In Button -->
+  <div id="google-signin-container">
+    <div id="g_id_onload"
+         data-client_id="917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com"
+         data-callback="handleCredentialResponse">
+    </div>
+    <div class="g_id_signin" data-type="standard"></div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Profile</h2>
+      <img id="modal-profile-pic" src="default-avatar.png" alt="Profile Picture">
+      <p><strong>Name:</strong> <span id="modal-user-name"></span></p>
+      <p><strong>Email:</strong> <span id="modal-user-email"></span></p>
+      <button id="close-modal">Close</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
