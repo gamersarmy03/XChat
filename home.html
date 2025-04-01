@@ -17,13 +17,13 @@
         .header {
             padding: 10px;
             position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .hamburger {
             font-size: 24px;
             cursor: pointer;
-            position: absolute;
-            top: 10px;
-            left: 10px;
         }
         .menu {
             display: none;
@@ -43,6 +43,26 @@
         .menu a:hover {
             color: #cccccc;
         }
+        .search-container {
+            position: relative;
+        }
+        .search-icon {
+            font-size: 24px;
+            cursor: pointer;
+            color: #ffffff;
+        }
+        .search-input {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            width: 200px;
+        }
         .content {
             flex: 1;
             display: flex;
@@ -57,6 +77,10 @@
         <div class="menu" id="menu">
             <a href="profile.html">Profile</a>
             <!-- Add more menu options here if needed -->
+        </div>
+        <div class="search-container">
+            <div class="search-icon" onclick="toggleSearch()">🔍</div>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search @users or chats" onkeyup="search(event)">
         </div>
     </div>
     <div class="content" id="content">
@@ -77,14 +101,41 @@
         function toggleMenu() {
             const menu = document.getElementById('menu');
             menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            // Hide search input when menu is toggled
+            document.getElementById('searchInput').style.display = 'none';
         }
 
-        // Hide menu when clicking outside
+        function toggleSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
+            // Hide menu when search is toggled
+            document.getElementById('menu').style.display = 'none';
+            if (searchInput.style.display === 'block') {
+                searchInput.focus(); // Focus the input when shown
+            }
+        }
+
+        function search(event) {
+            const query = event.target.value.trim();
+            if (event.key === 'Enter' && query) {
+                console.log('Searching for:', query);
+                // Add your search logic here (e.g., filter @users or chats)
+                // For now, it just logs to console
+                event.target.value = ''; // Clear input after search
+                toggleSearch(); // Hide search input after Enter
+            }
+        }
+
+        // Hide menu or search when clicking outside
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('menu');
             const hamburger = document.getElementsByClassName('hamburger')[0];
+            const searchContainer = document.getElementsByClassName('search-container')[0];
             if (!menu.contains(event.target) && !hamburger.contains(event.target)) {
                 menu.style.display = 'none';
+            }
+            if (!searchContainer.contains(event.target) && event.target !== document.getElementById('searchInput')) {
+                document.getElementById('searchInput').style.display = 'none';
             }
         });
     </script>
