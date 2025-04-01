@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .profile-container {
+            text-align: center;
+        }
+        .profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+        .profile-info {
+            margin-top: 10px;
+        }
+        a {
+            color: #4285F4;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <img id="profile-pic" class="profile-pic" alt="Profile Picture">
+        <div class="profile-info">
+            <h2 id="name"></h2>
+            <p><strong>Username:</strong> <span id="username"></span></p>
+            <p><strong>Email:</strong> <a id="email" href="mailto:"></a></p>
+        </div>
+    </div>
+
+    <script>
+        // Parse Google token and extract user info
+        const token = localStorage.getItem('google_token');
+        if (!token) {
+            alert("You are not logged in!");
+            window.location.href = 'index.html'; // Redirect to login page if no token
+        }
+
+        fetch(`https://www.googleapis.com/oauth2/v3/userinfo`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('profile-pic').src = data.picture;
+            document.getElementById('name').textContent = data.name;
+            document.getElementById('username').textContent = data.given_name || data.name.split(' ')[0];
+            document.getElementById('email').textContent = data.email;
+            document.getElementById('email').href = `mailto:${data.email}`;
+        })
+        .catch(error => {
+            console.error("Error fetching user info:", error);
+            alert("Failed to fetch user info. Please try again.");
+            localStorage.removeItem('google_token');
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
