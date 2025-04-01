@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-signin-client_id" content="917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com">
+    <meta name="google-signin-scope" content="profile email">
     <title>Login</title>
     <style>
         body {
@@ -23,30 +24,75 @@
             max-width: 200px;
             margin-bottom: 20px;
         }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        .error {
+            color: #ff4444;
+            margin-top: 20px;
+            display: none;
+        }
     </style>
     <script src="https://apis.google.com/js/platform.js" async defer></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <div class="g-signin2" data-onsuccess="onSignIn"></div>
+        <div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
+        <div class="loading" id="loading">Loading...</div>
+        <div class="error" id="error"></div>
     </div>
 
     <script>
+        // Initialize Google Auth
+        function onLoad() {
+            gapi.load('auth2', function() {
+                gapi.auth2.init({
+                    client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com'
+                }).then(function() {
+                    console.log('Google Auth initialized');
+                }).catch(function(error) {
+                    showError('Google Auth initialization failed: ' + error.details);
+                });
+            });
+        }
+
         function onSignIn(googleUser) {
-            // Get user profile info
-            var profile = googleUser.getBasicProfile();
-            var userData = {
-                id: profile.getId(),
-                name: profile.getName(),
-                email: profile.getEmail(),
-                image: profile.getImageUrl()
-            };
-            
-            // Store user data and redirect
-            localStorage.setItem('userData', JSON.stringify(userData));
-            window.location.href = 'home.html';
+            try {
+                // Show loading state
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+
+                // Get user profile info
+                var profile = googleUser.getBasicProfile();
+                if (!profile) {
+                    throw new Error('Failed to get profile information');
+                }
+
+                var userData = {
+                    id: profile.getId(),
+                    name: profile.getName(),
+                    email: profile.getEmail(),
+                    image: profile.getImageUrl()
+                };
+
+                // Store user data and redirect
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
+            } catch (error) {
+                showError('Sign-in failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
         }
     </script>
+    <script src="https://apis.google.com/js/platform.js?onload=onLoad" async defer></script>
 </body>
 </html>
