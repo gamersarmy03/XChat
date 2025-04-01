@@ -9,26 +9,26 @@
 </head>
 <body>
   <!-- Header Section -->
-  <header>
-    <div id="profile-icon">
-      <img id="user-profile-pic" src="default-avatar.png" alt="Profile Icon">
+  <header class="header">
+    <div id="profile-icon" class="profile-icon">
+      <img id="user-profile-pic" src="default-avatar.png" alt="Profile Icon" class="profile-image">
     </div>
-    <h1>Chit</h1>
+    <h1 class="app-title">Chit</h1>
   </header>
 
   <!-- Main Content -->
-  <main>
-    <div id="welcome-message" class="hidden">
+  <main class="main-content">
+    <div id="welcome-message" class="welcome-message hidden">
       <p>Welcome to Chit, <span id="user-name"></span>!</p>
     </div>
-    <div id="chat-history" class="hidden">
+    <div id="chat-history" class="chat-history hidden">
       <h2>Previous Chats</h2>
-      <ul id="chat-list"></ul>
+      <ul id="chat-list" class="chat-list"></ul>
     </div>
   </main>
 
   <!-- Google Sign-In Button -->
-  <div id="google-signin-container">
+  <div id="google-signin-container" class="google-signin-container">
     <div id="g_id_onload"
          data-client_id="917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com"
          data-callback="handleCredentialResponse">
@@ -40,10 +40,10 @@
   <div id="profile-modal" class="modal hidden">
     <div class="modal-content">
       <h2>Profile</h2>
-      <img id="modal-profile-pic" src="default-avatar.png" alt="Profile Picture">
+      <img id="modal-profile-pic" src="default-avatar.png" alt="Profile Picture" class="profile-image">
       <p><strong>Name:</strong> <span id="modal-user-name"></span></p>
       <p><strong>Email:</strong> <span id="modal-user-email"></span></p>
-      <button id="close-modal">Close</button>
+      <button id="close-modal" class="close-modal-button">Close</button>
     </div>
   </div>
 
