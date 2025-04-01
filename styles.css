@@ -45,6 +45,12 @@ body {
   min-height: calc(100vh - 100px);
 }
 
+.welcome-text {
+  text-align: center;
+  margin-top: 50px;
+  font-size: 1.2rem;
+}
+
 .welcome-message {
   text-align: center;
   margin-top: 50px;
@@ -108,8 +114,7 @@ body {
 .modal-content {
   background-color: #000000;
   padding: 20px;
-  border: 1px solid #ffffff;
-  border-radius: 10px;
+  border-radius: 10px; /* Optional: Add rounded corners */
   text-align: center;
   max-width: 90%;
   width: 400px;
