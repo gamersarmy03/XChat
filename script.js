@@ -14,8 +14,10 @@ function handleCredentialResponse(response) {
   // Update UI
   document.getElementById('user-profile-pic').src = userProfile.picture;
   document.getElementById('user-name').textContent = userProfile.name;
-  document.getElementById('welcome-message').classList.remove('hidden');
-  document.getElementById('custom-signin-container').classList.add('hidden');
+
+  // Hide sign-in page and show homepage
+  document.getElementById('signin-page').classList.add('hidden');
+  document.getElementById('homepage').classList.remove('hidden');
 
   // Simulate fetching chat history
   fetchChatHistory();
@@ -37,8 +39,6 @@ function fetchChatHistory() {
     li.textContent = `${chat.name}: ${chat.lastMessage}`;
     chatList.appendChild(li);
   });
-
-  document.getElementById('chat-history').classList.remove('hidden');
 }
 
 // Open Profile Modal
