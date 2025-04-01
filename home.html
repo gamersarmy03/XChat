@@ -55,6 +55,8 @@
             return;
         }
 
+        console.log("Token:", token); // Log the token for debugging
+
         fetch(`https://www.googleapis.com/oauth2/v3/userinfo`, {
             headers: {
                 Authorization: `Bearer ${token}`
@@ -68,10 +70,10 @@
         })
         .then(data => {
             console.log("User info:", data); // Log the user info for debugging
-            document.getElementById('profile-pic').src = data.picture;
-            document.getElementById('name').textContent = data.name;
-            document.getElementById('username').textContent = data.given_name || data.name.split(' ')[0];
-            document.getElementById('email').textContent = data.email;
+            document.getElementById('profile-pic').src = data.picture || "https://via.placeholder.com/100"; // Default placeholder image
+            document.getElementById('name').textContent = data.name || "Unknown";
+            document.getElementById('username').textContent = data.given_name || data.name.split(' ')[0] || "Unknown";
+            document.getElementById('email').textContent = data.email || "Unknown";
             document.getElementById('email').href = `mailto:${data.email}`;
         })
         .catch(error => {
