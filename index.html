@@ -3,70 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-signin-client_id" content="917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com">
     <title>Login</title>
     <style>
         body {
             background-color: #000000;
             color: #ffffff;
-            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
+            font-family: Arial, sans-serif;
         }
         .login-container {
             text-align: center;
         }
         .logo {
-            width: 150px;
+            max-width: 200px;
             margin-bottom: 20px;
         }
-        button {
-            background-color: #4285F4;
-            color: #ffffff;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #357ae8;
-        }
     </style>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <h1>Welcome</h1>
-        <button id="google-signin">Sign in with Google</button>
+        <div class="g-signin2" data-onsuccess="onSignIn"></div>
     </div>
 
     <script>
-        // Google Sign-In script
-        function handleCredentialResponse(response) {
-            const token = response.credential;
-            if (!token) {
-                alert("Authentication failed. Please try again.");
-                return;
-            }
-            localStorage.setItem('google_token', token); // Store token for later use
-            window.location.href = 'home.html'; // Redirect to home page
+        function onSignIn(googleUser) {
+            // Get user profile info
+            var profile = googleUser.getBasicProfile();
+            var userData = {
+                id: profile.getId(),
+                name: profile.getName(),
+                email: profile.getEmail(),
+                image: profile.getImageUrl()
+            };
+            
+            // Store user data and redirect
+            localStorage.setItem('userData', JSON.stringify(userData));
+            window.location.href = 'home.html';
         }
-
-        window.onload = function () {
-            google.accounts.id.initialize({
-                client_id: "917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com",
-                callback: handleCredentialResponse,
-                scope: "profile email openid" // Include required scopes
-            });
-            google.accounts.id.renderButton(
-                document.getElementById("google-signin"),
-                { theme: "outline", size: "large" } // Customize the button
-            );
-        };
     </script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
