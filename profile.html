@@ -24,49 +24,140 @@
             border-radius: 50%;
             margin-bottom: 20px;
         }
-        .logout-btn {
+        .edit-btn, .logout-btn, .remove-dp-btn {
             background-color: #ffffff;
             color: #000000;
-            padding: 10px 20px;
+            padding: 5px 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 20px;
+            margin: 5px;
         }
-        .logout-btn:hover {
+        .edit-btn:hover, .logout-btn:hover, .remove-dp-btn:hover {
             background-color: #cccccc;
+        }
+        .edit-input {
+            display: none;
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            margin: 5px 0;
+            width: 200px;
         }
     </style>
 </head>
 <body>
     <div class="profile-container">
         <img id="profilePic" class="profile-pic" alt="Profile Picture">
+        <div>
+            <button class="edit-btn" onclick="changeDP()">Change DP</button>
+            <button class="remove-dp-btn" onclick="removeDP()">Remove DP</button>
+            <input type="file" id="dpInput" accept="image/*" style="display: none;" onchange="uploadDP(event)">
+        </div>
         <h2 id="userName"></h2>
+        <button class="edit-btn" onclick="toggleEditName()">Change Name</button>
+        <input type="text" id="nameInput" class="edit-input" placeholder="Enter new name" onkeyup="updateName(event)">
         <p id="userUsername"></p>
+        <button class="edit-btn" onclick="toggleEditUsername()">Change Username</button>
+        <input type="text" id="usernameInput" class="edit-input" placeholder="Enter new username (e.g., @user)" onkeyup="updateUsername(event)">
         <p id="userEmail"></p>
         <button class="logout-btn" onclick="signOut()">Logout</button>
     </div>
 
     <script>
+        const defaultDP = 'defaultdp.png'; // Path to your default DP image
+
         // Load user data on page load
         window.onload = function() {
             const userData = JSON.parse(localStorage.getItem('userData'));
             if (userData) {
-                document.getElementById('profilePic').src = userData.image;
+                // Use custom DP if set, otherwise use Google image or default
+                document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
                 document.getElementById('userName').textContent = userData.name;
                 document.getElementById('userEmail').textContent = userData.email;
 
-                // Generate and display username from email
-                const username = '@' + userData.email.split('@')[0];
+                // Generate and display username from email if not customized
+                const username = userData.customUsername || ('@' + userData.email.split('@')[0]);
                 document.getElementById('userUsername').textContent = username;
             } else {
-                // Redirect to login if no user data
-                window.location.href = 'index.html';
+                window.location.href = 'index.html'; // Redirect to login if no user data
+            }
+        }
+
+        function changeDP() {
+            document.getElementById('dpInput').click(); // Trigger file input
+        }
+
+        function uploadDP(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.customDP = e.target.result; // Store Base64 image
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    document.getElementById('profilePic').src = userData.customDP;
+                };
+                reader.readAsDataURL(file); // Convert image to Base64
+            }
+        }
+
+        function removeDP() {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            delete userData.customDP; // Remove custom DP
+            localStorage.setItem('userData', JSON.stringify(userData));
+            document.getElementById('profilePic').src = defaultDP; // Set to default
+        }
+
+        function toggleEditName() {
+            const nameInput = document.getElementById('nameInput');
+            nameInput.style.display = nameInput.style.display === 'block' ? 'none' : 'block';
+            if (nameInput.style.display === 'block') {
+                nameInput.focus();
+                nameInput.value = document.getElementById('userName').textContent;
+            }
+        }
+
+        function updateName(event) {
+            if (event.key === 'Enter') {
+                const newName = event.target.value.trim();
+                if (newName) {
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.name = newName;
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    document.getElementById('userName').textContent = newName;
+                    event.target.style.display = 'none';
+                }
+            }
+        }
+
+        function toggleEditUsername() {
+            const usernameInput = document.getElementById('usernameInput');
+            usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
+            if (usernameInput.style.display === 'block') {
+                usernameInput.focus();
+                usernameInput.value = document.getElementById('userUsername').textContent;
+            }
+        }
+
+        function updateUsername(event) {
+            if (event.key === 'Enter') {
+                const newUsername = event.target.value.trim();
+                if (newUsername && newUsername.startsWith('@')) {
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.customUsername = newUsername;
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    document.getElementById('userUsername').textContent = newUsername;
+                    event.target.style.display = 'none';
+                } else {
+                    alert('Username must start with @');
+                }
             }
         }
 
         function signOut() {
-            // Clear local storage and redirect
             localStorage.removeItem('userData');
             window.location.href = 'index.html';
         }
