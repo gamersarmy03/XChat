@@ -15,7 +15,7 @@ function handleCredentialResponse(response) {
   document.getElementById('user-profile-pic').src = userProfile.picture;
   document.getElementById('user-name').textContent = userProfile.name;
   document.getElementById('welcome-message').classList.remove('hidden');
-  document.getElementById('google-signin-container').classList.add('hidden');
+  document.getElementById('custom-signin-container').classList.add('hidden');
 
   // Simulate fetching chat history
   fetchChatHistory();
@@ -63,8 +63,9 @@ window.onload = () => {
     client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
     callback: handleCredentialResponse
   });
-  google.accounts.id.renderButton(
-    document.getElementById('google-signin-container'),
-    { theme: 'outline', size: 'large' }
-  );
+
+  // Attach click event to custom sign-in button
+  document.getElementById('custom-signin-button').addEventListener('click', () => {
+    google.accounts.id.prompt(); // Trigger Google Sign-In dialog
+  });
 };
