@@ -47,9 +47,10 @@
             position: relative;
         }
         .search-icon {
-            font-size: 24px;
+            width: 24px;
+            height: 24px;
             cursor: pointer;
-            color: #ffffff;
+            fill: #ffffff; /* Ensures the SVG is white */
         }
         .search-input {
             display: none;
@@ -79,7 +80,9 @@
             <!-- Add more menu options here if needed -->
         </div>
         <div class="search-container">
-            <div class="search-icon" onclick="toggleSearch()">🔍</div>
+            <svg class="search-icon" onclick="toggleSearch()" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
             <input type="text" class="search-input" id="searchInput" placeholder="Search @users or chats" onkeyup="search(event)">
         </div>
     </div>
@@ -120,7 +123,6 @@
             if (event.key === 'Enter' && query) {
                 console.log('Searching for:', query);
                 // Add your search logic here (e.g., filter @users or chats)
-                // For now, it just logs to console
                 event.target.value = ''; // Clear input after search
                 toggleSearch(); // Hide search input after Enter
             }
