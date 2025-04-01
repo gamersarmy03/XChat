@@ -52,6 +52,7 @@
         if (!token) {
             alert("You are not logged in!");
             window.location.href = 'index.html'; // Redirect to login page if no token
+            return;
         }
 
         fetch(`https://www.googleapis.com/oauth2/v3/userinfo`, {
@@ -59,8 +60,14 @@
                 Authorization: `Bearer ${token}`
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log("User info:", data); // Log the user info for debugging
             document.getElementById('profile-pic').src = data.picture;
             document.getElementById('name').textContent = data.name;
             document.getElementById('username').textContent = data.given_name || data.name.split(' ')[0];
@@ -70,8 +77,8 @@
         .catch(error => {
             console.error("Error fetching user info:", error);
             alert("Failed to fetch user info. Please try again.");
-            localStorage.removeItem('google_token');
-            window.location.href = 'index.html';
+            localStorage.removeItem('google_token'); // Clear invalid token
+            window.location.href = 'index.html'; // Redirect to login page
         });
     </script>
 </body>
