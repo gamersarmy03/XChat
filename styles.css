@@ -69,13 +69,27 @@ body {
   background-color: #333333;
 }
 
-/* Google Sign-In Container */
-.google-signin-container {
+/* Custom Sign-In Button */
+.signin-button {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  padding: 10px 20px;
+  background-color: #4285F4;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.signin-button:hover {
+  background-color: #357AE8;
+}
+
+.signin-button svg {
+  margin-right: 10px;
 }
 
 /* Profile Modal */
@@ -102,7 +116,7 @@ body {
 }
 
 .close-modal-button {
-  margin-top: 10px;
+  margin-top: 20px;
   padding: 10px 20px;
   background-color: #ffffff;
   color: #000000;
