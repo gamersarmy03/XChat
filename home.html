@@ -8,12 +8,12 @@
         body {
             background-color: #000000;
             color: #ffffff;
-            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
+            font-family: Arial, sans-serif;
         }
         .profile-container {
             text-align: center;
@@ -24,64 +24,58 @@
             border-radius: 50%;
             margin-bottom: 20px;
         }
-        .profile-info {
-            margin-top: 10px;
+        .logout-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
         }
-        a {
-            color: #4285F4;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
+        .logout-btn:hover {
+            background-color: #cccccc;
         }
     </style>
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
 </head>
 <body>
     <div class="profile-container">
-        <img id="profile-pic" class="profile-pic" alt="Profile Picture">
-        <div class="profile-info">
-            <h2 id="name"></h2>
-            <p><strong>Username:</strong> <span id="username"></span></p>
-            <p><strong>Email:</strong> <a id="email" href="mailto:"></a></p>
-        </div>
+        <img id="profilePic" class="profile-pic" alt="Profile Picture">
+        <h2 id="userName"></h2>
+        <p id="userEmail"></p>
+        <button class="logout-btn" onclick="signOut()">Logout</button>
     </div>
 
     <script>
-        // Parse Google token and extract user info
-        const token = localStorage.getItem('google_token');
-        if (!token) {
-            alert("You are not logged in!");
-            window.location.href = 'index.html'; // Redirect to login page if no token
-            return;
+        // Load user data on page load
+        window.onload = function() {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (userData) {
+                document.getElementById('profilePic').src = userData.image;
+                document.getElementById('userName').textContent = userData.name;
+                document.getElementById('userEmail').textContent = userData.email;
+            } else {
+                // Redirect to login if no user data
+                window.location.href = 'index.html';
+            }
         }
 
-        console.log("Token:", token); // Log the token for debugging
+        function signOut() {
+            var auth2 = gapi.auth2.getAuthInstance();
+            auth2.signOut().then(function () {
+                localStorage.removeItem('userData');
+                window.location.href = 'index.html';
+            });
+        }
 
-        fetch(`https://www.googleapis.com/oauth2/v3/userinfo`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("User info:", data); // Log the user info for debugging
-            document.getElementById('profile-pic').src = data.picture || "https://via.placeholder.com/100"; // Default placeholder image
-            document.getElementById('name').textContent = data.name || "Unknown";
-            document.getElementById('username').textContent = data.given_name || data.name.split(' ')[0] || "Unknown";
-            document.getElementById('email').textContent = data.email || "Unknown";
-            document.getElementById('email').href = `mailto:${data.email}`;
-        })
-        .catch(error => {
-            console.error("Error fetching user info:", error);
-            alert("Failed to fetch user info. Please try again.");
-            localStorage.removeItem('google_token'); // Clear invalid token
-            window.location.href = 'index.html'; // Redirect to login page
-        });
+        // Initialize Google Auth
+        function onLoad() {
+            gapi.load('auth2', function() {
+                gapi.auth2.init();
+            });
+        }
     </script>
+    <script src="https://apis.google.com/js/platform.js?onload=onLoad" async defer></script>
 </body>
 </html>
