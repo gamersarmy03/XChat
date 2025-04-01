@@ -8,31 +8,39 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <!-- Header Section -->
-  <header class="header">
-    <div id="profile-icon" class="profile-icon">
-      <img id="user-profile-pic" src="default-avatar.png" alt="Profile Icon" class="profile-image">
-    </div>
-    <h1 class="app-title">Chit</h1>
-  </header>
+  <!-- Sign-In Page -->
+  <div id="signin-page" class="page">
+    <header class="header">
+      <h1 class="app-title">Chit</h1>
+    </header>
+    <main class="main-content">
+      <p class="welcome-text">Welcome to Chit! Please sign in to continue.</p>
+      <div id="custom-signin-container" class="google-signin-container">
+        <button id="custom-signin-button" class="signin-button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/></svg>
+          Sign in with Google
+        </button>
+      </div>
+    </main>
+  </div>
 
-  <!-- Main Content -->
-  <main class="main-content">
-    <div id="welcome-message" class="welcome-message hidden">
-      <p>Welcome to Chit, <span id="user-name"></span>!</p>
-    </div>
-    <div id="chat-history" class="chat-history hidden">
-      <h2>Previous Chats</h2>
-      <ul id="chat-list" class="chat-list"></ul>
-    </div>
-  </main>
-
-  <!-- Custom Sign-In Button -->
-  <div id="custom-signin-container" class="google-signin-container hidden">
-    <button id="custom-signin-button" class="signin-button">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/></svg>
-      Sign in with Google
-    </button>
+  <!-- Homepage -->
+  <div id="homepage" class="page hidden">
+    <header class="header">
+      <div id="profile-icon" class="profile-icon">
+        <img id="user-profile-pic" src="default-avatar.png" alt="Profile Icon" class="profile-image">
+      </div>
+      <h1 class="app-title">Chit</h1>
+    </header>
+    <main class="main-content">
+      <div id="welcome-message" class="welcome-message">
+        <p>Welcome to Chit, <span id="user-name"></span>!</p>
+      </div>
+      <div id="chat-history" class="chat-history">
+        <h2>Previous Chats</h2>
+        <ul id="chat-list" class="chat-list"></ul>
+      </div>
+    </main>
   </div>
 
   <!-- Profile Modal -->
