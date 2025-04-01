@@ -47,6 +47,10 @@
         // Google Sign-In script
         function handleCredentialResponse(response) {
             const token = response.credential;
+            if (!token) {
+                alert("Authentication failed. Please try again.");
+                return;
+            }
             localStorage.setItem('google_token', token); // Store token for later use
             window.location.href = 'home.html'; // Redirect to home page
         }
@@ -54,7 +58,8 @@
         window.onload = function () {
             google.accounts.id.initialize({
                 client_id: "917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com",
-                callback: handleCredentialResponse
+                callback: handleCredentialResponse,
+                scope: "profile email openid" // Include required scopes
             });
             google.accounts.id.renderButton(
                 document.getElementById("google-signin"),
