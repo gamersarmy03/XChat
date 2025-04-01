@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - XChit</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .profile-container {
+            text-align: center;
+        }
+        .profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+        .logout-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .logout-btn:hover {
+            background-color: #cccccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <img id="profilePic" class="profile-pic" alt="Profile Picture">
+        <h2 id="userName"></h2>
+        <p id="userUsername"></p>
+        <p id="userEmail"></p>
+        <button class="logout-btn" onclick="signOut()">Logout</button>
+    </div>
+
+    <script>
+        // Load user data on page load
+        window.onload = function() {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (userData) {
+                document.getElementById('profilePic').src = userData.image;
+                document.getElementById('userName').textContent = userData.name;
+                document.getElementById('userEmail').textContent = userData.email;
+
+                // Generate and display username from email
+                const username = '@' + userData.email.split('@')[0];
+                document.getElementById('userUsername').textContent = username;
+            } else {
+                // Redirect to login if no user data
+                window.location.href = 'index.html';
+            }
+        }
+
+        function signOut() {
+            // Clear local storage and redirect
+            localStorage.removeItem('userData');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
