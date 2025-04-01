@@ -37,12 +37,12 @@
             background-color: #cccccc;
         }
     </style>
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
 </head>
 <body>
     <div class="profile-container">
         <img id="profilePic" class="profile-pic" alt="Profile Picture">
         <h2 id="userName"></h2>
+        <p id="userUsername"></p> <!-- Added for username -->
         <p id="userEmail"></p>
         <button class="logout-btn" onclick="signOut()">Logout</button>
     </div>
@@ -55,6 +55,10 @@
                 document.getElementById('profilePic').src = userData.image;
                 document.getElementById('userName').textContent = userData.name;
                 document.getElementById('userEmail').textContent = userData.email;
+
+                // Generate and display username from email
+                const username = '@' + userData.email.split('@')[0];
+                document.getElementById('userUsername').textContent = username;
             } else {
                 // Redirect to login if no user data
                 window.location.href = 'index.html';
