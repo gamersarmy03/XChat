@@ -46,6 +46,18 @@
             margin: 5px 0;
             width: 200px;
         }
+        .username-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .username-prefix {
+            color: #ffffff;
+            margin-right: 5px;
+        }
+        #usernameInput {
+            width: 180px; /* Adjusted to account for prefix */
+        }
     </style>
 </head>
 <body>
@@ -61,7 +73,10 @@
         <input type="text" id="nameInput" class="edit-input" placeholder="Enter new name" onkeyup="updateName(event)">
         <p id="userUsername"></p>
         <button class="edit-btn" onclick="toggleEditUsername()">Change Username</button>
-        <input type="text" id="usernameInput" class="edit-input" placeholder="Enter new username (e.g., @user)" onkeyup="updateUsername(event)">
+        <div class="username-container">
+            <span class="username-prefix">@</span>
+            <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
+        </div>
         <p id="userEmail"></p>
         <button class="logout-btn" onclick="signOut()">Logout</button>
     </div>
@@ -73,21 +88,20 @@
         window.onload = function() {
             const userData = JSON.parse(localStorage.getItem('userData'));
             if (userData) {
-                // Use custom DP if set, otherwise use Google image or default
                 document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
                 document.getElementById('userName').textContent = userData.name;
                 document.getElementById('userEmail').textContent = userData.email;
 
-                // Generate and display username from email if not customized
-                const username = userData.customUsername || ('@' + userData.email.split('@')[0]);
-                document.getElementById('userUsername').textContent = username;
+                // Display username with @ prefix, use customUsername or derive from email
+                const username = userData.customUsername || userData.email.split('@')[0];
+                document.getElementById('userUsername').textContent = '@' + username;
             } else {
                 window.location.href = 'index.html'; // Redirect to login if no user data
             }
         }
 
         function changeDP() {
-            document.getElementById('dpInput').click(); // Trigger file input
+            document.getElementById('dpInput').click();
         }
 
         function uploadDP(event) {
@@ -96,19 +110,19 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customDP = e.target.result; // Store Base64 image
+                    userData.customDP = e.target.result;
                     localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('profilePic').src = userData.customDP;
                 };
-                reader.readAsDataURL(file); // Convert image to Base64
+                reader.readAsDataURL(file);
             }
         }
 
         function removeDP() {
             const userData = JSON.parse(localStorage.getItem('userData'));
-            delete userData.customDP; // Remove custom DP
+            delete userData.customDP;
             localStorage.setItem('userData', JSON.stringify(userData));
-            document.getElementById('profilePic').src = defaultDP; // Set to default
+            document.getElementById('profilePic').src = defaultDP;
         }
 
         function toggleEditName() {
@@ -138,21 +152,23 @@
             usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
             if (usernameInput.style.display === 'block') {
                 usernameInput.focus();
-                usernameInput.value = document.getElementById('userUsername').textContent;
+                // Pre-fill with current username (without @)
+                const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove @
+                usernameInput.value = currentUsername;
             }
         }
 
         function updateUsername(event) {
             if (event.key === 'Enter') {
                 const newUsername = event.target.value.trim();
-                if (newUsername && newUsername.startsWith('@')) {
+                if (newUsername) {
                     const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customUsername = newUsername;
+                    userData.customUsername = newUsername; // Store without @
                     localStorage.setItem('userData', JSON.stringify(userData));
-                    document.getElementById('userUsername').textContent = newUsername;
+                    document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
                 } else {
-                    alert('Username must start with @');
+                    alert('Username cannot be empty');
                 }
             }
         }
