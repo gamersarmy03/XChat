@@ -38,6 +38,7 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-top: 10px;
         }
         #customSignInBtn:hover {
             background-color: #cccccc;
@@ -60,7 +61,7 @@
     </div>
 
     <script>
-        console.log('Script started'); // Debug: Check if script runs
+        console.log('Script started');
 
         // Firebase configuration
         const firebaseConfig = {
@@ -79,6 +80,7 @@
             console.log('Firebase initialized');
         } catch (error) {
             console.error('Firebase initialization failed:', error);
+            showError('Failed to initialize Firebase: ' + error.message);
         }
         const db = firebase.firestore();
         const auth = firebase.auth();
@@ -88,7 +90,7 @@
 
         // Handle GIS credential response
         function handleCredentialResponse(response) {
-            console.log('GIS callback triggered');
+            console.log('GIS button clicked, response received:', response);
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
@@ -105,16 +107,20 @@
 
                 saveUserData(userData);
             } catch (error) {
+                console.error('GIS processing error:', error);
                 showError('GIS Sign-in failed: ' + error.message);
             }
         }
 
         // Firebase Google Sign-In
         function signInWithGoogle() {
-            console.log('Custom sign-in clicked');
+            console.log('Custom Sign-in button clicked');
             const provider = new firebase.auth.GoogleAuthProvider();
+            provider.addScope('profile email'); // Ensure basic profile info is requested
+
             auth.signInWithPopup(provider)
                 .then((result) => {
+                    console.log('Firebase Auth success:', result);
                     const user = result.user;
                     const userData = {
                         id: user.uid,
@@ -125,7 +131,12 @@
                     saveUserData(userData);
                 })
                 .catch((error) => {
-                    showError('Firebase Sign-in failed: ' + error.message);
+                    console.error('Firebase Auth error:', error);
+                    if (error.code === 'auth/popup-blocked') {
+                        showError('Popup blocked by browser. Please allow popups and try again.');
+                    } else {
+                        showError('Sign-in failed: ' + error.message);
+                    }
                 });
         }
 
@@ -137,17 +148,21 @@
 
             db.collection('users').doc(userData.id).set(userData, { merge: true })
                 .then(() => {
+                    console.log('User data saved to Firestore');
                     localStorage.setItem('userData', JSON.stringify(userData));
                     window.location.href = 'home.html';
                 })
-                .catch(error => showError('Failed to save user data: ' + error.message))
+                .catch(error => {
+                    console.error('Firestore save error:', error);
+                    showError('Failed to save user data: ' + error.message);
+                })
                 .finally(() => {
                     document.getElementById('loading').style.display = 'none';
                 });
         }
 
         function showError(message) {
-            console.error('Error:', message);
+            console.error('Error displayed:', message);
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
@@ -155,7 +170,7 @@
 
         // Initialize Google Sign-In
         function initializeGoogleSignIn() {
-            console.log('Attempting GIS initialization');
+            console.log('Initializing GIS');
             if (typeof google !== 'undefined' && google.accounts) {
                 console.log('GIS library loaded');
                 google.accounts.id.initialize({
@@ -171,7 +186,7 @@
                 console.log('GIS button rendered');
                 google.accounts.id.prompt();
             } else {
-                console.warn('GIS not loaded, relying on custom button');
+                console.warn('GIS library not loaded');
                 document.getElementById('g_id_signin').style.display = 'none';
             }
         }
