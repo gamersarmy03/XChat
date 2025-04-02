@@ -38,7 +38,6 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            display: none; /* Hidden by default, shown if GIS fails */
         }
         #customSignInBtn:hover {
             background-color: #cccccc;
@@ -61,6 +60,8 @@
     </div>
 
     <script>
+        console.log('Script started'); // Debug: Check if script runs
+
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
@@ -73,7 +74,12 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log('Firebase initialized');
+        } catch (error) {
+            console.error('Firebase initialization failed:', error);
+        }
         const db = firebase.firestore();
         const auth = firebase.auth();
 
@@ -82,6 +88,7 @@
 
         // Handle GIS credential response
         function handleCredentialResponse(response) {
+            console.log('GIS callback triggered');
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
@@ -104,6 +111,7 @@
 
         // Firebase Google Sign-In
         function signInWithGoogle() {
+            console.log('Custom sign-in clicked');
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
                 .then((result) => {
@@ -123,6 +131,7 @@
 
         // Save user data to Firestore and redirect
         function saveUserData(userData) {
+            console.log('Saving user data:', userData);
             document.getElementById('loading').style.display = 'block';
             document.getElementById('error').style.display = 'none';
 
@@ -138,14 +147,17 @@
         }
 
         function showError(message) {
+            console.error('Error:', message);
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
 
-        // Initialize Google Sign-In with retry mechanism
+        // Initialize Google Sign-In
         function initializeGoogleSignIn() {
+            console.log('Attempting GIS initialization');
             if (typeof google !== 'undefined' && google.accounts) {
+                console.log('GIS library loaded');
                 google.accounts.id.initialize({
                     client_id: googleClientId,
                     callback: handleCredentialResponse,
@@ -156,19 +168,21 @@
                     document.getElementById('g_id_signin'),
                     { theme: 'outline', size: 'large' }
                 );
-
+                console.log('GIS button rendered');
                 google.accounts.id.prompt();
             } else {
-                console.warn('Google Identity Services not loaded yet. Retrying...');
+                console.warn('GIS not loaded, relying on custom button');
                 document.getElementById('g_id_signin').style.display = 'none';
-                document.getElementById('customSignInBtn').style.display = 'block'; // Show fallback button
-                setTimeout(initializeGoogleSignIn, 1000); // Retry after 1 second
             }
         }
 
-        window.onload = function() {
+        // Run initialization after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
             initializeGoogleSignIn();
-        };
+        });
+
+        console.log('Script ended');
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929cc935499b2010',t:'MTc0MzU1OTc4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
