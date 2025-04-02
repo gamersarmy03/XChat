@@ -50,7 +50,7 @@
             width: 24px;
             height: 24px;
             cursor: pointer;
-            fill: #ffffff; /* Ensures the SVG is white */
+            fill: #ffffff;
         }
         .search-input {
             display: none;
@@ -77,7 +77,6 @@
         <div class="hamburger" onclick="toggleMenu()">☰</div>
         <div class="menu" id="menu">
             <a href="profile.html">Profile</a>
-            <!-- Add more menu options here if needed -->
         </div>
         <div class="search-container">
             <svg class="search-icon" onclick="toggleSearch()" viewBox="0 0 24 24">
@@ -91,30 +90,25 @@
     </div>
 
     <script>
-        // Load user data on page load
         window.onload = function() {
             const userData = JSON.parse(localStorage.getItem('userData'));
             if (!userData) {
-                window.location.href = 'index.html'; // Redirect to login if no user data
+                window.location.href = 'index.html';
             }
-            // For now, we assume no chats exist, so show "Welcome to XChit"
-            // Later, you can add logic here to check for chats
         }
 
         function toggleMenu() {
             const menu = document.getElementById('menu');
             menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-            // Hide search input when menu is toggled
             document.getElementById('searchInput').style.display = 'none';
         }
 
         function toggleSearch() {
             const searchInput = document.getElementById('searchInput');
             searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
-            // Hide menu when search is toggled
             document.getElementById('menu').style.display = 'none';
             if (searchInput.style.display === 'block') {
-                searchInput.focus(); // Focus the input when shown
+                searchInput.focus();
             }
         }
 
@@ -122,13 +116,11 @@
             const query = event.target.value.trim();
             if (event.key === 'Enter' && query) {
                 console.log('Searching for:', query);
-                // Add your search logic here (e.g., filter @users or chats)
-                event.target.value = ''; // Clear input after search
-                toggleSearch(); // Hide search input after Enter
+                event.target.value = '';
+                toggleSearch();
             }
         }
 
-        // Hide menu or search when clicking outside
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('menu');
             const hamburger = document.getElementsByClassName('hamburger')[0];
