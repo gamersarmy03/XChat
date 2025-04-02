@@ -70,8 +70,16 @@
             appId: "1:210249328132:web:34fb51c0e1f07866f5f751",
             measurementId: "G-V1NX3MPEPP"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+
+        // Initialize Firebase and Firestore
+        let db;
+        firebase.initializeApp(firebaseConfig).then(() => {
+            db = firebase.firestore();
+            console.log('Firebase initialized');
+        }).catch(error => {
+            console.error('Firebase initialization failed:', error);
+            showError('Failed to initialize Firebase');
+        });
 
         function handleCredentialResponse(response) {
             try {
@@ -87,6 +95,11 @@
                     email: payload.email,
                     image: payload.picture
                 };
+
+                // Wait for Firebase to be ready
+                if (!db) {
+                    throw new Error('Firestore not initialized yet');
+                }
 
                 db.collection('users').doc(userData.id).get()
                     .then((doc) => {
@@ -116,13 +129,11 @@
             errorDiv.style.display = 'block';
         }
 
-        // Called when GIS script loads
         function onGoogleScriptLoad() {
             console.log('Google Identity Services loaded');
             initializeGoogleSignIn();
         }
 
-        // Initialize Google Sign-In
         function initializeGoogleSignIn() {
             if (typeof google === 'undefined') {
                 console.error('Google Identity Services not available');
@@ -156,7 +167,6 @@
             });
         }
 
-        // Fallback if GIS fails to load initially
         document.addEventListener('DOMContentLoaded', function() {
             if (typeof google === 'undefined') {
                 console.log('GIS not loaded yet, waiting...');
