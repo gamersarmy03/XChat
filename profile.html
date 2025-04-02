@@ -120,10 +120,10 @@
                     localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('profilePic').src = userData.customDP;
 
-                    // Update Appwrite (without name)
+                    // Update Appwrite DP collection
                     await databases.updateDocument(
                         '67ed2a13003e4a7f3cf6', // Database ID
-                        '67ed2a2000013d191949', // Collection ID
+                        '67ed2a2000013d191949', // DP Collection ID
                         userData.id,
                         { customDP: userData.customDP }
                     );
@@ -138,10 +138,10 @@
             localStorage.setItem('userData', JSON.stringify(userData));
             document.getElementById('profilePic').src = userData.image || defaultDP;
 
-            // Update Appwrite (without name)
+            // Update Appwrite DP collection
             await databases.updateDocument(
                 '67ed2a13003e4a7f3cf6', // Database ID
-                '67ed2a2000013d191949', // Collection ID
+                '67ed2a2000013d191949', // DP Collection ID
                 userData.id,
                 { customDP: null }
             );
@@ -165,7 +165,14 @@
                     localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('userName').textContent = newName;
                     event.target.style.display = 'none';
-                    // No Appwrite update for name since it's not stored there
+
+                    // Update Appwrite Name collection
+                    await databases.updateDocument(
+                        '67ed2a13003e4a7f3cf6', // Database ID
+                        '67ed4c9400230d389eba', // Name Collection ID
+                        userData.id,
+                        { name: newName }
+                    );
                 }
             }
         }
@@ -190,10 +197,10 @@
                     document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
 
-                    // Update Appwrite (without name)
+                    // Update Appwrite Username collection
                     await databases.updateDocument(
                         '67ed2a13003e4a7f3cf6', // Database ID
-                        '67ed2a2000013d191949', // Collection ID
+                        '67ed4ccc003aeb32a47b', // Username Collection ID
                         userData.id,
                         { customUsername: newUsername }
                     );
