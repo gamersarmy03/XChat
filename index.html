@@ -46,7 +46,7 @@
         const { Client, Account } = Appwrite;
 
         const client = new Client()
-            .setEndpoint('https://cloud.appwrite.io/v1') // Adjust if using a custom endpoint
+            .setEndpoint('https://cloud.appwrite.io/v1')
             .setProject('67ed2822002be4a5e417');
 
         const account = new Account(client);
@@ -56,10 +56,13 @@
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                // Initiate OAuth2 login with Google
+                // Store a flag to indicate login is in progress
+                localStorage.setItem('loginInProgress', 'true');
+
                 account.createOAuth2Session('google', window.location.origin + '/home.html', window.location.origin + '/index.html');
             } catch (error) {
                 showError('Login failed: ' + error.message);
+                localStorage.removeItem('loginInProgress');
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -74,11 +77,12 @@
         window.onload = async function() {
             try {
                 const user = await account.get();
-                if (user) {
-                    window.location.href = 'home.html'; // Redirect to home if logged in
+                if (user && !localStorage.getItem('loginInProgress')) {
+                    window.location.href = 'home.html'; // Redirect only if not mid-login
                 }
             } catch (error) {
-                console.log('No active session');
+                console.log('No active session or login in progress');
+                localStorage.removeItem('loginInProgress'); // Clear flag if session check fails
             }
         };
     </script>
