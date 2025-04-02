@@ -45,32 +45,44 @@
 
     <script>
         function handleCredentialResponse(response) {
-            try {
-                // Show loading state
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
+    try {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('error').style.display = 'none';
 
-                // Decode the JWT ID token
-                const credential = response.credential;
-                const payload = JSON.parse(atob(credential.split('.')[1]));
+        const credential = response.credential;
+        const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                // Extract user data from the payload
-                var userData = {
-                    id: payload.sub, // Unique user ID
-                    name: payload.name,
-                    email: payload.email,
-                    image: payload.picture
-                };
+        // Get existing userData from localStorage, if any
+        let existingUserData = JSON.parse(localStorage.getItem('userData')) || {};
 
-                // Store user data and redirect
-                localStorage.setItem('userData', JSON.stringify(userData));
-                window.location.href = 'home.html';
-            } catch (error) {
-                showError('Sign-in failed: ' + error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
+        // Create new userData from Google payload
+        let userData = {
+            id: payload.sub,
+            name: payload.name,
+            email: payload.email,
+            image: payload.picture
+        };
+
+        // Merge existing customizations into the new userData
+        if (existingUserData.customDP) {
+            userData.customDP = existingUserData.customDP;
         }
+        if (existingUserData.customUsername) {
+            userData.customUsername = existingUserData.customUsername;
+        }
+        if (existingUserData.name && existingUserData.name !== payload.name) {
+            userData.name = existingUserData.name; // Preserve custom name if changed
+        }
+
+        // Store the merged userData
+        localStorage.setItem('userData', JSON.stringify(userData));
+        window.location.href = 'home.html';
+    } catch (error) {
+        showError('Sign-in failed: ' + error.message);
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
 
         function showError(message) {
             const errorDiv = document.getElementById('error');
