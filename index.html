@@ -71,20 +71,25 @@
             measurementId: "G-V1NX3MPEPP"
         };
 
-        // Initialize Firebase and Firestore
+        // Promise to ensure Firebase is initialized
         let db;
-        firebase.initializeApp(firebaseConfig).then(() => {
+        const firebaseReady = new Promise((resolve, reject) => {
+            firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
             console.log('Firebase initialized');
+            resolve();
         }).catch(error => {
             console.error('Firebase initialization failed:', error);
             showError('Failed to initialize Firebase');
         });
 
-        function handleCredentialResponse(response) {
+        async function handleCredentialResponse(response) {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
+
+                // Wait for Firebase to be ready
+                await firebaseReady;
 
                 const credential = response.credential;
                 const payload = JSON.parse(atob(credential.split('.')[1]));
@@ -96,27 +101,17 @@
                     image: payload.picture
                 };
 
-                // Wait for Firebase to be ready
-                if (!db) {
-                    throw new Error('Firestore not initialized yet');
+                // Now db is guaranteed to be initialized
+                const doc = await db.collection('users').doc(userData.id).get();
+                if (doc.exists) {
+                    const customData = doc.data();
+                    userData.customDP = customData.customDP || userData.image;
+                    userData.name = customData.name || userData.name;
+                    userData.customUsername = customData.customUsername || userData.email.split('@')[0];
                 }
 
-                db.collection('users').doc(userData.id).get()
-                    .then((doc) => {
-                        if (doc.exists) {
-                            const customData = doc.data();
-                            userData.customDP = customData.customDP || userData.image;
-                            userData.name = customData.name || userData.name;
-                            userData.customUsername = customData.customUsername || userData.email.split('@')[0];
-                        }
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        window.location.href = 'home.html';
-                    })
-                    .catch((error) => {
-                        console.error('Firestore fetch error:', error);
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        window.location.href = 'home.html';
-                    });
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
             } catch (error) {
                 showError('Sign-in failed: ' + error.message);
                 document.getElementById('loading').style.display = 'none';
