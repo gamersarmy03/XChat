@@ -56,13 +56,15 @@
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                // Store a flag to indicate login is in progress
+                // Set a flag to indicate login is in progress
                 localStorage.setItem('loginInProgress', 'true');
+                localStorage.setItem('lastLoginAttempt', Date.now().toString());
 
                 account.createOAuth2Session('google', window.location.origin + '/home.html', window.location.origin + '/index.html');
             } catch (error) {
                 showError('Login failed: ' + error.message);
                 localStorage.removeItem('loginInProgress');
+                localStorage.removeItem('lastLoginAttempt');
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -76,13 +78,32 @@
 
         window.onload = async function() {
             try {
+                const lastLoginAttempt = localStorage.getItem('lastLoginAttempt');
+                const timeSinceLastAttempt = Date.now() - parseInt(lastLoginAttempt || '0');
+                const isLoginInProgress = localStorage.getItem('loginInProgress') === 'true';
+
+                // Avoid redirect if login is in progress or too soon after last attempt
+                if (isLoginInProgress && timeSinceLastAttempt < 5000) {
+                    console.log('Login in progress, waiting for OAuth2 callback...');
+                    return;
+                }
+
                 const user = await account.get();
-                if (user && !localStorage.getItem('loginInProgress')) {
-                    window.location.href = 'home.html'; // Redirect only if not mid-login
+                if (user) {
+                    console.log('User already logged in, redirecting to home');
+                    window.location.href = 'home.html';
                 }
             } catch (error) {
-                console.log('No active session or login in progress');
-                localStorage.removeItem('loginInProgress'); // Clear flag if session check fails
+                console.log('No active session:', error.message);
+                localStorage.removeItem('loginInProgress');
+                localStorage.removeItem('lastLoginAttempt');
+            }
+        };
+
+        // Prevent accidental page refresh
+        window.onbeforeunload = function() {
+            if (localStorage.getItem('loginInProgress') === 'true') {
+                return 'Login is in progress. Are you sure you want to leave?';
             }
         };
     </script>
