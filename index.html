@@ -47,14 +47,15 @@
     </div>
 
     <script>
-        // Firebase configuration
+        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
             authDomain: "xchit-dfebf.firebaseapp.com",
             projectId: "xchit-dfebf",
             storageBucket: "xchit-dfebf.firebasestorage.app",
             messagingSenderId: "210249328132",
-            appId: "1:210249328132:web:34fb51c0e1f07866f5f751"
+            appId: "1:210249328132:web:34fb51c0e1f07866f5f751",
+            measurementId: "G-V1NX3MPEPP"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -69,7 +70,7 @@
 
                 // Base Google user data
                 let userData = {
-                    id: payload.sub, // Google user ID
+                    id: payload.sub,
                     name: payload.name,
                     email: payload.email,
                     image: payload.picture
