@@ -32,6 +32,11 @@
             display: none;
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -43,73 +48,61 @@
     </div>
 
     <script>
-        async function handleCredentialResponse(response) {
-            try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
+            authDomain: "xchit-dfebf.firebaseapp.com",
+            projectId: "xchit-dfebf",
+            storageBucket: "xchit-dfebf.firebasestorage.app",
+            messagingSenderId: "210249328132",
+            appId: "1:210249328132:web:34fb51c0e1f07866f5f751",
+            measurementId: "G-V1NX3MPEPP"
+        };
 
-                const credential = response.credential;
-                const payload = JSON.parse(atob(credential.split('.')[1]));
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-                let userData = {
-                    id: payload.sub,
-                    name: payload.name,
-                    email: payload.email,
-                    image: payload.picture
-                };
-                console.log('Google Data:', userData);
+        function handleCredentialResponse(response) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
 
-                const githubData = await fetchUserDataFromGitHub(userData.email);
-                if (githubData) {
-                    console.log('GitHub Data:', githubData);
-                    userData = { ...userData, ...githubData };
-                } else {
-                    console.log('No GitHub data found, using Google defaults');
-                }
+            const credential = response.credential;
+            const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                console.log('Merged User Data:', userData);
-                localStorage.setItem('userData', JSON.stringify(userData));
-                window.location.href = 'home.html';
-            } catch (error) {
-                showError('Sign-in failed: ' + error.message);
-                console.error('Sign-in error:', error);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
-        }
+            const userData = {
+                id: payload.sub,
+                name: payload.name,
+                email: payload.email,
+                image: payload.picture
+            };
 
-        async function fetchUserDataFromGitHub(email) {
-            // Replace with your NEW fine-grained PAT (Contents read/write for gamersarmy03/xchitstorage)
-            const token = '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';
-            const repo = 'gamersarmy03/xchitstorage';
-            const filePath = `${email}.json`;
-
-            try {
-                console.log(`Fetching GitHub data for ${filePath}`);
-                const response = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
+            // Check Firestore for existing user data
+            db.collection('users').doc(userData.id).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const serverData = doc.data();
+                        userData.customDP = serverData.customDP || payload.picture;
+                        userData.name = serverData.name || payload.name;
+                        userData.customUsername = serverData.customUsername || payload.email.split('@')[0];
+                    } else {
+                        // New user, save initial data to Firestore
+                        db.collection('users').doc(userData.id).set({
+                            name: userData.name,
+                            email: userData.email,
+                            image: userData.image
+                        });
                     }
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    window.location.href = 'home.html';
+                })
+                .catch(error => {
+                    showError('Sign-in failed: ' + error.message);
+                })
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
                 });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const content = JSON.parse(atob(data.content));
-                    console.log('GitHub fetch successful:', content);
-                    return content;
-                } else if (response.status === 404) {
-                    console.log('No existing file found in GitHub');
-                    return null;
-                } else {
-                    console.error('GitHub fetch failed:', response.status, await response.text());
-                    return null;
-                }
-            } catch (error) {
-                console.error('Error fetching GitHub data:', error);
-                return null;
-            }
         }
 
         function showError(message) {
@@ -133,6 +126,5 @@
             google.accounts.id.prompt();
         };
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929dbb118db4b0dc',t:'MTc0MzU2OTY5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
