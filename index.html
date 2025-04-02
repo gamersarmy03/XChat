@@ -60,6 +60,7 @@
             text-decoration: underline;
             cursor: pointer;
             margin-top: 10px;
+            display: inline-block; /* Ensures it behaves as a clickable element */
         }
     </style>
     <!-- Firebase SDK -->
@@ -72,8 +73,8 @@
         <div class="form-container" id="authForm">
             <input type="email" id="email" placeholder="Email" required>
             <input type="password" id="password" placeholder="Password" required>
-            <button id="authButton" onclick="handleAuth()">Sign In</button>
-            <span class="toggle-link" onclick="toggleForm()">Need an account? Sign Up</span>
+            <button id="authButton">Sign In</button>
+            <span class="toggle-link" id="toggleLink">Need an account? Sign Up</span>
         </div>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
@@ -96,15 +97,20 @@
         const auth = firebase.auth();
 
         let isSignUp = false;
+        const authButton = document.getElementById('authButton');
+        const toggleLink = document.getElementById('toggleLink');
 
+        // Toggle between Sign In and Sign Up
         function toggleForm() {
             isSignUp = !isSignUp;
-            const authButton = document.getElementById('authButton');
-            const toggleLink = document.querySelector('.toggle-link');
             authButton.textContent = isSignUp ? 'Sign Up' : 'Sign In';
             toggleLink.textContent = isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up';
         }
 
+        // Add click event listener to toggle link
+        toggleLink.addEventListener('click', toggleForm);
+
+        // Handle authentication
         function handleAuth() {
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -128,7 +134,7 @@
                     const user = userCredential.user;
                     const userData = {
                         id: user.uid,
-                        name: user.email.split('@')[0], // Default name from email
+                        name: user.email.split('@')[0],
                         email: user.email
                     };
                     localStorage.setItem('userData', JSON.stringify(userData));
@@ -151,6 +157,9 @@
                     loading.style.display = 'none';
                 });
         }
+
+        // Add click event listener to auth button
+        authButton.addEventListener('click', handleAuth);
 
         function showError(message) {
             const errorDiv = document.getElementById('error');
