@@ -31,30 +31,18 @@
             margin-top: 20px;
             display: none;
         }
-        #fallbackBtn {
-            display: none;
-            padding: 10px 20px;
-            background-color: #ffffff;
-            color: #000000;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #fallbackBtn:hover {
-            background-color: #cccccc;
-        }
     </style>
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer onload="onGoogleScriptLoad()"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+    <!-- Load Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <!-- Load Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
         <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
-        <button id="fallbackBtn" onclick="initializeGoogleSignIn()">Sign in with Google (Fallback)</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
@@ -73,16 +61,10 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        let db;
-        try {
-            db = firebase.firestore();
-            console.log('Firebase and Firestore initialized');
-        } catch (error) {
-            console.error('Firestore initialization failed:', error);
-            showError('Failed to initialize Firestore');
-        }
+        const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        async function handleCredentialResponse(response) {
+        function handleCredentialResponse(response) {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
@@ -90,30 +72,23 @@
                 const credential = response.credential;
                 const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                let userData = {
+                var userData = {
                     id: payload.sub,
                     name: payload.name,
                     email: payload.email,
                     image: payload.picture
                 };
 
-                // Check if db is available before proceeding
-                if (!db) {
-                    throw new Error('Firestore not available');
-                }
-
-                const doc = await db.collection('users').doc(userData.id).get();
-                if (doc.exists) {
-                    const customData = doc.data();
-                    userData.customDP = customData.customDP || userData.image;
-                    userData.name = customData.name || userData.name;
-                    userData.customUsername = customData.customUsername || userData.email.split('@')[0];
-                }
-
-                localStorage.setItem('userData', JSON.stringify(userData));
-                window.location.href = 'home.html';
+                // Save to Firestore
+                db.collection('users').doc(userData.id).set(userData, { merge: true })
+                    .then(() => {
+                        localStorage.setItem('userData', JSON.stringify(userData));
+                        window.location.href = 'home.html';
+                    })
+                    .catch(error => showError('Failed to save user data: ' + error.message));
             } catch (error) {
                 showError('Sign-in failed: ' + error.message);
+            } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
@@ -124,51 +99,20 @@
             errorDiv.style.display = 'block';
         }
 
-        function onGoogleScriptLoad() {
-            console.log('Google Identity Services loaded');
-            initializeGoogleSignIn();
-        }
-
-        function initializeGoogleSignIn() {
-            if (typeof google === 'undefined') {
-                console.error('Google Identity Services not available');
-                showError('Google Sign-In failed to load. Please try the fallback button.');
-                document.getElementById('fallbackBtn').style.display = 'block';
-                return;
-            }
-
+        window.onload = function() {
             google.accounts.id.initialize({
-                client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
                 callback: handleCredentialResponse,
                 auto_select: true
             });
 
-            try {
-                google.accounts.id.renderButton(
-                    document.getElementById('g_id_signin'),
-                    { theme: 'outline', size: 'large' } // Fixed typo here
-                );
-                console.log('Google Sign-In button rendered');
-            } catch (error) {
-                console.error('Error rendering button:', error);
-                showError('Failed to render Sign-In button');
-                document.getElementById('fallbackBtn').style.display = 'block';
-            }
+            google.accounts.id.renderButton(
+                document.getElementById('g_id_signin'),
+                { theme: 'outline', size: 'large' }
+            );
 
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    console.log('Prompt not shown:', notification.getNotDisplayedReason());
-                }
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof google === 'undefined') {
-                console.log('GIS not loaded yet, waiting for onload...');
-            } else {
-                onGoogleScriptLoad();
-            }
-        });
+            google.accounts.id.prompt();
+        };
     </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929cc935499b2010',t:'MTc0MzU1OTc4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
