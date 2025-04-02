@@ -53,18 +53,19 @@
 
         async function loginWithGoogle() {
             try {
+                console.log('Starting Google login');
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                // Set a flag to indicate login is in progress
                 localStorage.setItem('loginInProgress', 'true');
-                localStorage.setItem('lastLoginAttempt', Date.now().toString());
+                localStorage.setItem('lastAction', 'login_started_' + Date.now());
 
                 account.createOAuth2Session('google', window.location.origin + '/home.html', window.location.origin + '/index.html');
             } catch (error) {
+                console.error('Login error:', error.message);
                 showError('Login failed: ' + error.message);
                 localStorage.removeItem('loginInProgress');
-                localStorage.removeItem('lastLoginAttempt');
+                localStorage.removeItem('lastAction');
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -77,34 +78,29 @@
         }
 
         window.onload = async function() {
+            console.log('Index.html loaded');
+            const isLoginInProgress = localStorage.getItem('loginInProgress') === 'true';
+            const lastAction = localStorage.getItem('lastAction') || '';
+
+            if (isLoginInProgress) {
+                console.log('Login in progress, waiting for callback...');
+                return; // Do nothing, let OAuth2 complete
+            }
+
             try {
-                const lastLoginAttempt = localStorage.getItem('lastLoginAttempt');
-                const timeSinceLastAttempt = Date.now() - parseInt(lastLoginAttempt || '0');
-                const isLoginInProgress = localStorage.getItem('loginInProgress') === 'true';
-
-                // Avoid redirect if login is in progress or too soon after last attempt
-                if (isLoginInProgress && timeSinceLastAttempt < 5000) {
-                    console.log('Login in progress, waiting for OAuth2 callback...');
-                    return;
-                }
-
                 const user = await account.get();
-                if (user) {
-                    console.log('User already logged in, redirecting to home');
-                    window.location.href = 'home.html';
-                }
+                console.log('User found:', user.$id);
+                window.location.href = 'home.html';
             } catch (error) {
-                console.log('No active session:', error.message);
-                localStorage.removeItem('loginInProgress');
-                localStorage.removeItem('lastLoginAttempt');
+                console.log('No session found:', error.message);
+                // Stay on index.html if no session
             }
         };
 
-        // Prevent accidental page refresh
+        // Block all refreshes for debugging
         window.onbeforeunload = function() {
-            if (localStorage.getItem('loginInProgress') === 'true') {
-                return 'Login is in progress. Are you sure you want to leave?';
-            }
+            console.log('Attempting to leave index.html');
+            return 'Are you sure? Login might be in progress.';
         };
     </script>
 </body>
