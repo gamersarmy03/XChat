@@ -59,9 +59,7 @@
             width: 180px;
         }
     </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="profile-container">
@@ -85,81 +83,58 @@
     </div>
 
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
-            authDomain: "xchit-dfebf.firebaseapp.com",
-            projectId: "xchit-dfebf",
-            storageBucket: "xchit-dfebf.firebasestorage.app",
-            messagingSenderId: "210249328132",
-            appId: "1:210249328132:web:34fb51c0e1f07866f5f751",
-            measurementId: "G-V1NX3MPEPP"
-        };
+        const { Client, Account, Databases } = Appwrite;
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
         const defaultDP = 'defaultdp.png';
+        const client = new Client()
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('67ed2822002be4a5e417');
+        const account = new Account(client);
+        const database = new Databases(client);
+        const profilesCollection = '67ed2a2000013d191949';
 
-        window.onload = function() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            if (!userData) {
+        window.onload = async function() {
+            try {
+                const user = await account.get();
+                if (!user) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const profile = await database.getDocument(profilesCollection, user.$id);
+                document.getElementById('profilePic').src = profile.customDP || user.prefs.image || defaultDP;
+                document.getElementById('userName').textContent = profile.name;
+                document.getElementById('userEmail').textContent = profile.email;
+                const username = profile.customUsername || profile.email.split('@')[0];
+                document.getElementById('userUsername').textContent = '@' + username;
+
+                localStorage.setItem('userData', JSON.stringify(profile));
+            } catch (error) {
+                console.error('Error loading profile:', error);
                 window.location.href = 'index.html';
-                return;
             }
-            document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
-            document.getElementById('userName').textContent = userData.name;
-            document.getElementById('userEmail').textContent = userData.email;
-            const username = userData.customUsername || userData.email.split('@')[0];
-            document.getElementById('userUsername').textContent = '@' + username;
-
-            // Optionally refresh from Firestore
-            db.collection('users').doc(userData.id).get()
-                .then(doc => {
-                    if (doc.exists) {
-                        const serverData = doc.data();
-                        userData.customDP = serverData.customDP || userData.image;
-                        userData.name = serverData.name || userData.name;
-                        userData.customUsername = serverData.customUsername || userData.email.split('@')[0];
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
-                        document.getElementById('userName').textContent = userData.name;
-                        document.getElementById('userUsername').textContent = '@' + username;
-                    }
-                });
         };
 
-        function changeDP() {
-            document.getElementById('dpInput').click();
-        }
-
-        function uploadDP(event) {
+        async function uploadDP(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customDP = e.target.result;
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    document.getElementById('profilePic').src = userData.customDP;
-
-                    db.collection('users').doc(userData.id).update({
-                        customDP: userData.customDP
-                    }).catch(error => console.error('Error updating DP:', error));
+                reader.onload = async function(e) {
+                    const user = await account.get();
+                    const customDP = e.target.result;
+                    await database.updateDocument(profilesCollection, user.$id, { customDP });
+                    document.getElementById('profilePic').src = customDP;
+                    updateLocalStorage('customDP', customDP);
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        function removeDP() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            delete userData.customDP;
-            localStorage.setItem('userData', JSON.stringify(userData));
+        async function removeDP() {
+            const user = await account.get();
+            await database.updateDocument(profilesCollection, user.$id, { customDP: null });
             document.getElementById('profilePic').src = defaultDP;
-
-            db.collection('users').doc(userData.id).update({
-                customDP: firebase.firestore.FieldValue.delete()
-            });
+            updateLocalStorage('customDP', null);
         }
 
         function toggleEditName() {
@@ -171,19 +146,15 @@
             }
         }
 
-        function updateName(event) {
+        async function updateName(event) {
             if (event.key === 'Enter') {
                 const newName = event.target.value.trim();
                 if (newName) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.name = newName;
-                    localStorage.setItem('userData', JSON.stringify(userData));
+                    const user = await account.get();
+                    await database.updateDocument(profilesCollection, user.$id, { name: newName });
                     document.getElementById('userName').textContent = newName;
                     event.target.style.display = 'none';
-
-                    db.collection('users').doc(userData.id).update({
-                        name: newName
-                    });
+                    updateLocalStorage('name', newName);
                 }
             }
         }
@@ -198,27 +169,31 @@
             }
         }
 
-        function updateUsername(event) {
+        async function updateUsername(event) {
             if (event.key === 'Enter') {
                 const newUsername = event.target.value.trim();
                 if (newUsername) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customUsername = newUsername;
-                    localStorage.setItem('userData', JSON.stringify(userData));
+                    const user = await account.get();
+                    await database.updateDocument(profilesCollection, user.$id, { customUsername: newUsername });
                     document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
-
-                    db.collection('users').doc(userData.id).update({
-                        customUsername: newUsername
-                    });
+                    updateLocalStorage('customUsername', newUsername);
                 } else {
                     alert('Username cannot be empty');
                 }
             }
         }
 
-        function signOut() {
+        async function signOut() {
+            await account.deleteSession('current');
+            localStorage.clear();
             window.location.href = 'index.html';
+        }
+
+        function updateLocalStorage(key, value) {
+            const userData = JSON.parse(localStorage.getItem('userData')) || {};
+            userData[key] = value;
+            localStorage.setItem('userData', JSON.stringify(userData));
         }
     </script>
 </body>
