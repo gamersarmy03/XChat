@@ -105,17 +105,22 @@
             try {
                 const user = await account.get();
                 if (!user) {
+                    console.log('No user session, redirecting to index');
                     window.location.href = 'index.html';
                     return;
                 }
 
-                // Clear login flag after successful session validation
+                console.log('User session validated:', user.$id);
+
+                // Clear login flags after successful validation
                 localStorage.removeItem('loginInProgress');
+                localStorage.removeItem('lastLoginAttempt');
 
                 let profile;
                 try {
                     profile = await database.getDocument(profilesCollection, user.$id);
                 } catch (error) {
+                    console.log('Profile not found, creating new one');
                     profile = await database.createDocument(
                         profilesCollection,
                         user.$id,
@@ -130,10 +135,16 @@
                 }
 
                 localStorage.setItem('userData', JSON.stringify(profile));
+                console.log('Profile loaded:', profile);
             } catch (error) {
-                console.error('Error loading user data:', error);
+                console.error('Error in home onload:', error.message);
                 window.location.href = 'index.html';
             }
+        };
+
+        // Prevent accidental page refresh
+        window.onbeforeunload = function() {
+            return 'Are you sure you want to leave?';
         };
 
         function toggleMenu() {
