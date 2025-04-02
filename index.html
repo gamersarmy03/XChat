@@ -70,8 +70,8 @@
                 let profileDoc;
                 try {
                     profileDoc = await databases.getDocument(
-                        '67ed2a2000013d191949', // Profile collection ID
-                        payload.sub // Use Google sub as document ID
+                        '67ed2a2000013d191949', // Collection ID
+                        payload.sub // Document ID (Google sub)
                     );
                     // Merge Appwrite data with Google data
                     userData.name = profileDoc.name || payload.name;
@@ -79,10 +79,10 @@
                     userData.customUsername = profileDoc.customUsername || null;
                 } catch (error) {
                     if (error.code === 404) {
-                        // New user, create profile in Appwrite
+                        // New user, create profile in Appwrite with explicit documentId
                         await databases.createDocument(
                             '67ed2a2000013d191949', // Collection ID
-                            payload.sub, // Document ID
+                            payload.sub, // Explicitly set documentId to Google sub
                             {
                                 name: payload.name,
                                 email: payload.email,
