@@ -109,6 +109,9 @@
                     return;
                 }
 
+                // Clear login flag after successful session validation
+                localStorage.removeItem('loginInProgress');
+
                 let profile;
                 try {
                     profile = await database.getDocument(profilesCollection, user.$id);
@@ -121,8 +124,8 @@
                             name: user.name,
                             email: user.email
                         },
-                        [`user:${user.$id}`], // Write permission
-                        ['role:all'] // Read permission
+                        [`user:${user.$id}`],
+                        ['role:all']
                     );
                 }
 
