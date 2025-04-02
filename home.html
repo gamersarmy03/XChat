@@ -102,25 +102,23 @@
         const profilesCollection = '67ed2a2000013d191949';
 
         window.onload = async function() {
+            console.log('Home.html loaded');
+            localStorage.setItem('lastAction', 'home_loaded_' + Date.now());
+
             try {
                 const user = await account.get();
-                if (!user) {
-                    console.log('No user session, redirecting to index');
-                    window.location.href = 'index.html';
-                    return;
-                }
-
                 console.log('User session validated:', user.$id);
 
-                // Clear login flags after successful validation
+                // Clear login flag only after successful validation
                 localStorage.removeItem('loginInProgress');
-                localStorage.removeItem('lastLoginAttempt');
+                localStorage.setItem('lastAction', 'session_validated_' + Date.now());
 
                 let profile;
                 try {
                     profile = await database.getDocument(profilesCollection, user.$id);
+                    console.log('Profile fetched:', profile);
                 } catch (error) {
-                    console.log('Profile not found, creating new one');
+                    console.log('Creating new profile');
                     profile = await database.createDocument(
                         profilesCollection,
                         user.$id,
@@ -132,19 +130,22 @@
                         [`user:${user.$id}`],
                         ['role:all']
                     );
+                    console.log('Profile created:', profile);
                 }
 
                 localStorage.setItem('userData', JSON.stringify(profile));
-                console.log('Profile loaded:', profile);
+                localStorage.setItem('lastAction', 'profile_loaded_' + Date.now());
             } catch (error) {
-                console.error('Error in home onload:', error.message);
+                console.error('Session error:', error.message);
+                localStorage.setItem('lastAction', 'session_error_' + Date.now());
                 window.location.href = 'index.html';
             }
         };
 
-        // Prevent accidental page refresh
+        // Block all refreshes for debugging
         window.onbeforeunload = function() {
-            return 'Are you sure you want to leave?';
+            console.log('Attempting to leave home.html');
+            return 'Are you sure? Page might refresh.';
         };
 
         function toggleMenu() {
