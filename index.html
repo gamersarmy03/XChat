@@ -31,9 +31,21 @@
             margin-top: 20px;
             display: none;
         }
+        #fallbackBtn {
+            display: none;
+            padding: 10px 20px;
+            background-color: #ffffff;
+            color: #000000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #fallbackBtn:hover {
+            background-color: #cccccc;
+        }
     </style>
     <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="onGoogleScriptLoad()"></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
@@ -42,6 +54,7 @@
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
         <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
+        <button id="fallbackBtn" onclick="initializeGoogleSignIn()">Sign in with Google (Fallback)</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
@@ -103,11 +116,18 @@
             errorDiv.style.display = 'block';
         }
 
-        // Initialize Google Sign-In after DOM is ready
+        // Called when GIS script loads
+        function onGoogleScriptLoad() {
+            console.log('Google Identity Services loaded');
+            initializeGoogleSignIn();
+        }
+
+        // Initialize Google Sign-In
         function initializeGoogleSignIn() {
             if (typeof google === 'undefined') {
-                console.error('Google Identity Services not loaded');
-                showError('Google Sign-In failed to load');
+                console.error('Google Identity Services not available');
+                showError('Google Sign-In failed to load. Please try the fallback button.');
+                document.getElementById('fallbackBtn').style.display = 'block';
                 return;
             }
 
@@ -117,22 +137,32 @@
                 auto_select: true
             });
 
-            google.accounts.id.renderButton(
-                document.getElementById('g_id_signin'),
-                { theme: 'outline', size: 'large' }
-            );
+            try {
+                google.accounts.id.renderButton(
+                    document.getElementById('g_id_signin'),
+                    { theme: 'outline', size: 'large' }
+                );
+                console.log('Google Sign-In button rendered');
+            } catch (error) {
+                console.error('Error rendering button:', error);
+                showError('Failed to render Sign-In button');
+                document.getElementById('fallbackBtn').style.display = 'block';
+            }
 
             google.accounts.id.prompt((notification) => {
                 if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    console.log('Google prompt not displayed or skipped:', notification.getNotDisplayedReason());
+                    console.log('Prompt not shown:', notification.getNotDisplayedReason());
                 }
             });
         }
 
-        // Wait for DOM and GIS script to load
+        // Fallback if GIS fails to load initially
         document.addEventListener('DOMContentLoaded', function() {
-            // Delay slightly to ensure GIS script is ready
-            setTimeout(initializeGoogleSignIn, 100);
+            if (typeof google === 'undefined') {
+                console.log('GIS not loaded yet, waiting...');
+            } else {
+                onGoogleScriptLoad();
+            }
         });
     </script>
 </body>
