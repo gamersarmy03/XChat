@@ -50,7 +50,7 @@
             width: 24px;
             height: 24px;
             cursor: pointer;
-            fill: #ffffff; /* Ensures the SVG is white */
+            fill: #ffffff;
         }
         .search-input {
             display: none;
@@ -71,13 +71,14 @@
             align-items: center;
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="header">
         <div class="hamburger" onclick="toggleMenu()">☰</div>
         <div class="menu" id="menu">
             <a href="profile.html">Profile</a>
-            <!-- Add more menu options here if needed -->
         </div>
         <div class="search-container">
             <svg class="search-icon" onclick="toggleSearch()" viewBox="0 0 24 24">
@@ -91,30 +92,36 @@
     </div>
 
     <script>
-        // Load user data on page load
+        const firebaseConfig = {
+            apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
+            authDomain: "xchit-dfebf.firebaseapp.com",
+            projectId: "xchit-dfebf",
+            storageBucket: "xchit-dfebf.firebasestorage.app",
+            messagingSenderId: "210249328132",
+            appId: "1:210249328132:web:34fb51c0e1f07866f5f751"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         window.onload = function() {
             const userData = JSON.parse(localStorage.getItem('userData'));
             if (!userData) {
-                window.location.href = 'index.html'; // Redirect to login if no user data
+                window.location.href = 'index.html';
             }
-            // For now, we assume no chats exist, so show "Welcome to XChit"
-            // Later, you can add logic here to check for chats
         }
 
         function toggleMenu() {
             const menu = document.getElementById('menu');
             menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-            // Hide search input when menu is toggled
             document.getElementById('searchInput').style.display = 'none';
         }
 
         function toggleSearch() {
             const searchInput = document.getElementById('searchInput');
             searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
-            // Hide menu when search is toggled
             document.getElementById('menu').style.display = 'none';
             if (searchInput.style.display === 'block') {
-                searchInput.focus(); // Focus the input when shown
+                searchInput.focus();
             }
         }
 
@@ -122,13 +129,11 @@
             const query = event.target.value.trim();
             if (event.key === 'Enter' && query) {
                 console.log('Searching for:', query);
-                // Add your search logic here (e.g., filter @users or chats)
-                event.target.value = ''; // Clear input after search
-                toggleSearch(); // Hide search input after Enter
+                event.target.value = '';
+                toggleSearch();
             }
         }
 
-        // Hide menu or search when clicking outside
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('menu');
             const hamburger = document.getElementsByClassName('hamburger')[0];
@@ -141,5 +146,6 @@
             }
         });
     </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929d9d473aa7455d',t:'MTc0MzU2ODQ3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
