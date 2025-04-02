@@ -45,6 +45,7 @@
 
     <script>
         const client = new Appwrite.Client();
+        const account = new Appwrite.Account(client);
         const databases = new Appwrite.Databases(client);
 
         client
@@ -59,9 +60,16 @@
                 const credential = response.credential;
                 const payload = JSON.parse(atob(credential.split('.')[1]));
 
+                // Authenticate with Appwrite using Google OAuth token
+                await account.createOAuth2Session(
+                    'google',
+                    window.location.origin + '/home.html', // Success redirect URL
+                    window.location.origin + '/index.html' // Failure redirect URL
+                );
+
                 const userData = {
                     id: payload.sub,
-                    name: payload.name,
+                    name: payload.name, // Keep name in userData for local use
                     email: payload.email,
                     image: payload.picture
                 };
@@ -74,19 +82,17 @@
                         '67ed2a2000013d191949', // Collection ID
                         payload.sub // Document ID (Google sub)
                     );
-                    // Merge Appwrite data with Google data
-                    userData.name = profileDoc.name || payload.name;
+                    // Merge Appwrite data with Google data (excluding name)
                     userData.customDP = profileDoc.customDP || null;
                     userData.customUsername = profileDoc.customUsername || null;
                 } catch (error) {
                     if (error.code === 404) {
-                        // New user, create profile in Appwrite
+                        // New user, create profile in Appwrite (without name)
                         await databases.createDocument(
                             '67ed2a13003e4a7f3cf6', // Database ID
                             '67ed2a2000013d191949', // Collection ID
                             payload.sub, // Document ID
                             {
-                                name: payload.name,
                                 email: payload.email,
                                 image: payload.picture,
                                 customDP: null,
