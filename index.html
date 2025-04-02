@@ -32,91 +32,37 @@
             display: none;
         }
     </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
+        <button id="googleLoginBtn" onclick="loginWithGoogle()">Sign in with Google</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
 
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
-            authDomain: "xchit-dfebf.firebaseapp.com",
-            projectId: "xchit-dfebf",
-            storageBucket: "xchit-dfebf.firebasestorage.app",
-            messagingSenderId: "210249328132",
-            appId: "1:210249328132:web:34fb51c0e1f07866f5f751",
-            measurementId: "G-V1NX3MPEPP"
-        };
+        const { Client, Account } = Appwrite;
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const client = new Client()
+            .setEndpoint('https://cloud.appwrite.io/v1') // Adjust if using a custom endpoint
+            .setProject('67ed2822002be4a5e417');
 
-        // Dynamically load Google Identity Services script
-        const gisScript = document.createElement('script');
-        gisScript.src = 'https://accounts.google.com/gsi/client';
-        gisScript.async = true;
-        gisScript.defer = true;
-        gisScript.onload = function() {
-            google.accounts.id.initialize({
-                client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
-                callback: handleCredentialResponse,
-                auto_select: true
-            });
-            google.accounts.id.renderButton(
-                document.getElementById('g_id_signin'),
-                { theme: 'outline', size: 'large' }
-            );
-            google.accounts.id.prompt();
-        };
-        document.head.appendChild(gisScript);
+        const account = new Account(client);
 
-        function handleCredentialResponse(response) {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
+        async function loginWithGoogle() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
 
-            const credential = response.credential;
-            const payload = JSON.parse(atob(credential.split('.')[1]));
-
-            const userData = {
-                id: payload.sub,
-                name: payload.name,
-                email: payload.email,
-                image: payload.picture
-            };
-
-            db.collection('users').doc(userData.id).get()
-                .then(doc => {
-                    if (doc.exists) {
-                        const serverData = doc.data();
-                        userData.customDP = serverData.customDP || payload.picture;
-                        userData.name = serverData.name || payload.name;
-                        userData.customUsername = serverData.customUsername || payload.email.split('@')[0];
-                    } else {
-                        db.collection('users').doc(userData.id).set({
-                            name: userData.name,
-                            email: userData.email,
-                            image: userData.image
-                        });
-                    }
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    window.location.href = 'home.html';
-                })
-                .catch(error => {
-                    showError('Sign-in failed: ' + error.message);
-                })
-                .finally(() => {
-                    document.getElementById('loading').style.display = 'none';
-                });
+                // Initiate OAuth2 login with Google
+                account.createOAuth2Session('google', window.location.origin + '/home.html', window.location.origin + '/index.html');
+            } catch (error) {
+                showError('Login failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
         }
 
         function showError(message) {
@@ -124,6 +70,17 @@
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
+
+        window.onload = async function() {
+            try {
+                const user = await account.get();
+                if (user) {
+                    window.location.href = 'home.html'; // Redirect to home if logged in
+                }
+            } catch (error) {
+                console.log('No active session');
+            }
+        };
     </script>
 </body>
 </html>
