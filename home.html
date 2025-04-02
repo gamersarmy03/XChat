@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - XChit</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            padding: 10px;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hamburger {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .menu {
+            display: none;
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .menu a {
+            color: #ffffff;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+        }
+        .menu a:hover {
+            color: #cccccc;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            fill: #ffffff; /* Ensures the SVG is white */
+        }
+        .search-input {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            width: 200px;
+        }
+        .content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="hamburger" onclick="toggleMenu()">☰</div>
+        <div class="menu" id="menu">
+            <a href="profile.html">Profile</a>
+            <!-- Add more menu options here if needed -->
+        </div>
+        <div class="search-container">
+            <svg class="search-icon" onclick="toggleSearch()" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search @users or chats" onkeyup="search(event)">
+        </div>
+    </div>
+    <div class="content" id="content">
+        <h1>Welcome to XChit</h1>
+    </div>
+
+    <script>
+        // Load user data on page load
+        window.onload = function() {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (!userData) {
+                window.location.href = 'index.html'; // Redirect to login if no user data
+            }
+            // For now, we assume no chats exist, so show "Welcome to XChit"
+            // Later, you can add logic here to check for chats
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            // Hide search input when menu is toggled
+            document.getElementById('searchInput').style.display = 'none';
+        }
+
+        function toggleSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
+            // Hide menu when search is toggled
+            document.getElementById('menu').style.display = 'none';
+            if (searchInput.style.display === 'block') {
+                searchInput.focus(); // Focus the input when shown
+            }
+        }
+
+        function search(event) {
+            const query = event.target.value.trim();
+            if (event.key === 'Enter' && query) {
+                console.log('Searching for:', query);
+                // Add your search logic here (e.g., filter @users or chats)
+                event.target.value = ''; // Clear input after search
+                toggleSearch(); // Hide search input after Enter
+            }
+        }
+
+        // Hide menu or search when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('menu');
+            const hamburger = document.getElementsByClassName('hamburger')[0];
+            const searchContainer = document.getElementsByClassName('search-container')[0];
+            if (!menu.contains(event.target) && !hamburger.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+            if (!searchContainer.contains(event.target) && event.target !== document.getElementById('searchInput')) {
+                document.getElementById('searchInput').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

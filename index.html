@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .login-container {
+            text-align: center;
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        .error {
+            color: #ff4444;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+    <!-- Load the Google Identity Services library -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="login-container">
+        <img src="logo.png" alt="Logo" class="logo">
+        <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
+        <div class="loading" id="loading">Loading...</div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        function handleCredentialResponse(response) {
+            try {
+                // Show loading state
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+
+                // Decode the JWT ID token
+                const credential = response.credential;
+                const payload = JSON.parse(atob(credential.split('.')[1]));
+
+                // Extract user data from the payload
+                var userData = {
+                    id: payload.sub, // Unique user ID
+                    name: payload.name,
+                    email: payload.email,
+                    image: payload.picture
+                };
+
+                // Store user data and redirect
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
+            } catch (error) {
+                showError('Sign-in failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Initialize Google Identity Services
+        window.onload = function() {
+            google.accounts.id.initialize({
+                client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
+                callback: handleCredentialResponse,
+                auto_select: true // Optional: Auto-selects if only one account is available
+            });
+
+            google.accounts.id.renderButton(
+                document.getElementById('g_id_signin'),
+                { theme: 'outline', size: 'large' } // Customize button (optional)
+            );
+
+            // Prompt the user to sign in (optional One Tap prompt)
+            google.accounts.id.prompt();
+        };
+    </script>
+</body>
+</html>
