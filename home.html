@@ -5,7 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home - XChit</title>
     <style>
-        /* Same as your original CSS */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            padding: 10px;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hamburger {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .menu {
+            display: none;
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .menu a {
+            color: #ffffff;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+        }
+        .menu a:hover {
+            color: #cccccc;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            fill: #ffffff;
+        }
+        .search-input {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            width: 200px;
+        }
+        .content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
@@ -29,6 +93,7 @@
     </div>
 
     <script>
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
             authDomain: "xchit-dfebf.firebaseapp.com",
@@ -39,6 +104,7 @@
             measurementId: "G-V1NX3MPEPP"
         };
 
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -48,7 +114,7 @@
                 window.location.href = 'index.html';
                 return;
             }
-            // Optionally, refresh userData from Firestore
+            // Optionally refresh userData from Firestore
             db.collection('users').doc(userData.id).get()
                 .then(doc => {
                     if (doc.exists) {
@@ -58,6 +124,9 @@
                         userData.customUsername = serverData.customUsername || userData.email.split('@')[0];
                         localStorage.setItem('userData', JSON.stringify(userData));
                     }
+                })
+                .catch(error => {
+                    console.error('Error refreshing user data:', error);
                 });
         };
 
