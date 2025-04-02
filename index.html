@@ -71,16 +71,27 @@
             measurementId: "G-V1NX3MPEPP"
         };
 
-        // Promise to ensure Firebase is initialized
-        let db;
-        const firebaseReady = new Promise((resolve, reject) => {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            console.log('Firebase initialized');
-            resolve();
+        // Initialize Firebase globally
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        console.log('Firebase initialized');
+
+        // Promise to ensure Firestore is ready
+        const firestoreReady = new Promise((resolve) => {
+            if (db && typeof db.collection === 'function') {
+                resolve();
+            } else {
+                // Poll until Firestore is ready
+                const interval = setInterval(() => {
+                    if (db && typeof db.collection === 'function') {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 100);
+            }
         }).catch(error => {
-            console.error('Firebase initialization failed:', error);
-            showError('Failed to initialize Firebase');
+            console.error('Firestore initialization failed:', error);
+            showError('Failed to initialize Firestore');
         });
 
         async function handleCredentialResponse(response) {
@@ -88,8 +99,8 @@
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                // Wait for Firebase to be ready
-                await firebaseReady;
+                // Wait for Firestore to be ready
+                await firestoreReady;
 
                 const credential = response.credential;
                 const payload = JSON.parse(atob(credential.split('.')[1]));
@@ -101,7 +112,6 @@
                     image: payload.picture
                 };
 
-                // Now db is guaranteed to be initialized
                 const doc = await db.collection('users').doc(userData.id).get();
                 if (doc.exists) {
                     const customData = doc.data();
@@ -146,7 +156,7 @@
             try {
                 google.accounts.id.renderButton(
                     document.getElementById('g_id_signin'),
-                    { theme: 'outline', size: 'large' }
+                    { theme: 'outline', size 'large' }
                 );
                 console.log('Google Sign-In button rendered');
             } catch (error) {
