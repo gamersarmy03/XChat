@@ -32,40 +32,75 @@
             display: none;
         }
     </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <button id="googleLoginBtn" onclick="loginWithGoogle()">Sign in with Google</button>
+        <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
 
     <script>
-        const { Client, Account } = Appwrite;
+        const client = new Appwrite.Client();
+        const databases = new Appwrite.Databases(client);
 
-        const client = new Client()
-            .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject('67ed2822002be4a5e417');
+        client
+            .setEndpoint('https://cloud.appwrite.io/v1') // Default Appwrite endpoint
+            .setProject('67ed2822002be4a5e417'); // Your project ID
 
-        const account = new Account(client);
-
-        async function loginWithGoogle() {
+        async function handleCredentialResponse(response) {
             try {
-                console.log('Starting Google login');
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                localStorage.setItem('loginInProgress', 'true');
-                localStorage.setItem('lastAction', 'login_started_' + Date.now());
+                const credential = response.credential;
+                const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                account.createOAuth2Session('google', window.location.origin + '/home.html', window.location.origin + '/index.html');
+                const userData = {
+                    id: payload.sub,
+                    name: payload.name,
+                    email: payload.email,
+                    image: payload.picture
+                };
+
+                // Check if user profile exists in Appwrite
+                let profileDoc;
+                try {
+                    profileDoc = await databases.getDocument(
+                        '67ed2a2000013d191949', // Profile collection ID
+                        payload.sub // Use Google sub as document ID
+                    );
+                    // Merge Appwrite data with Google data
+                    userData.name = profileDoc.name || payload.name;
+                    userData.customDP = profileDoc.customDP || null;
+                    userData.customUsername = profileDoc.customUsername || null;
+                } catch (error) {
+                    if (error.code === 404) {
+                        // New user, create profile in Appwrite
+                        await databases.createDocument(
+                            '67ed2a2000013d191949', // Collection ID
+                            payload.sub, // Document ID
+                            {
+                                name: payload.name,
+                                email: payload.email,
+                                image: payload.picture,
+                                customDP: null,
+                                customUsername: null
+                            }
+                        );
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // Store in localStorage for quick access
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
             } catch (error) {
-                console.error('Login error:', error.message);
-                showError('Login failed: ' + error.message);
-                localStorage.removeItem('loginInProgress');
-                localStorage.removeItem('lastAction');
+                showError('Sign-in failed: ' + error.message);
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -77,30 +112,19 @@
             errorDiv.style.display = 'block';
         }
 
-        window.onload = async function() {
-            console.log('Index.html loaded');
-            const isLoginInProgress = localStorage.getItem('loginInProgress') === 'true';
-            const lastAction = localStorage.getItem('lastAction') || '';
+        window.onload = function() {
+            google.accounts.id.initialize({
+                client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
+                callback: handleCredentialResponse,
+                auto_select: true
+            });
 
-            if (isLoginInProgress) {
-                console.log('Login in progress, waiting for callback...');
-                return; // Do nothing, let OAuth2 complete
-            }
+            google.accounts.id.renderButton(
+                document.getElementById('g_id_signin'),
+                { theme: 'outline', size: 'large' }
+            );
 
-            try {
-                const user = await account.get();
-                console.log('User found:', user.$id);
-                window.location.href = 'home.html';
-            } catch (error) {
-                console.log('No session found:', error.message);
-                // Stay on index.html if no session
-            }
-        };
-
-        // Block all refreshes for debugging
-        window.onbeforeunload = function() {
-            console.log('Attempting to leave index.html');
-            return 'Are you sure? Login might be in progress.';
+            google.accounts.id.prompt();
         };
     </script>
 </body>
