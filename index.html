@@ -36,7 +36,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
-    <!-- Load Google Identity Services -->
+    <!-- Load Google Identity Services library -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -63,6 +63,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+
+        // Google Client ID (replace with your actual Client ID from Google Cloud Console)
+        const googleClientId = '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com';
 
         function handleCredentialResponse(response) {
             try {
@@ -100,17 +103,24 @@
         }
 
         window.onload = function() {
-            google.accounts.id.initialize({
-                callback: handleCredentialResponse,
-                auto_select: true
-            });
+            // Ensure Google Identity Services is loaded before initializing
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.initialize({
+                    client_id: googleClientId, // Required for GIS button
+                    callback: handleCredentialResponse,
+                    auto_select: true
+                });
 
-            google.accounts.id.renderButton(
-                document.getElementById('g_id_signin'),
-                { theme: 'outline', size: 'large' }
-            );
+                google.accounts.id.renderButton(
+                    document.getElementById('g_id_signin'),
+                    { theme: 'outline', size: 'large' }
+                );
 
-            google.accounts.id.prompt();
+                google.accounts.id.prompt();
+            } else {
+                console.error('Google Identity Services not loaded yet.');
+                showError('Google Sign-In failed to load. Please refresh the page.');
+            }
         };
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929cc935499b2010',t:'MTc0MzU1OTc4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
