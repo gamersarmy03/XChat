@@ -47,7 +47,7 @@
     </div>
 
     <script>
-        // Your Firebase configuration
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
             authDomain: "xchit-dfebf.firebaseapp.com",
@@ -68,7 +68,6 @@
                 const credential = response.credential;
                 const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                // Base Google user data
                 let userData = {
                     id: payload.sub,
                     name: payload.name,
@@ -76,7 +75,6 @@
                     image: payload.picture
                 };
 
-                // Check Firestore for custom data
                 db.collection('users').doc(userData.id).get()
                     .then((doc) => {
                         if (doc.exists) {
@@ -90,7 +88,6 @@
                     })
                     .catch((error) => {
                         console.error('Firestore fetch error:', error);
-                        // Fallback to Google data if Firestore fails
                         localStorage.setItem('userData', JSON.stringify(userData));
                         window.location.href = 'home.html';
                     });
@@ -106,7 +103,14 @@
             errorDiv.style.display = 'block';
         }
 
-        window.onload = function() {
+        // Initialize Google Sign-In after DOM is ready
+        function initializeGoogleSignIn() {
+            if (typeof google === 'undefined') {
+                console.error('Google Identity Services not loaded');
+                showError('Google Sign-In failed to load');
+                return;
+            }
+
             google.accounts.id.initialize({
                 client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
                 callback: handleCredentialResponse,
@@ -118,8 +122,18 @@
                 { theme: 'outline', size: 'large' }
             );
 
-            google.accounts.id.prompt();
-        };
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    console.log('Google prompt not displayed or skipped:', notification.getNotDisplayedReason());
+                }
+            });
+        }
+
+        // Wait for DOM and GIS script to load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Delay slightly to ensure GIS script is ready
+            setTimeout(initializeGoogleSignIn, 100);
+        });
     </script>
 </body>
 </html>
