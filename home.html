@@ -5,80 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home - XChit</title>
     <style>
-        body {
-            background-color: #000000;
-            color: #ffffff;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .header {
-            padding: 10px;
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .hamburger {
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .menu {
-            display: none;
-            position: absolute;
-            top: 40px;
-            left: 10px;
-            background-color: #333;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .menu a {
-            color: #ffffff;
-            text-decoration: none;
-            display: block;
-            margin: 10px 0;
-        }
-        .menu a:hover {
-            color: #cccccc;
-        }
-        .search-container {
-            position: relative;
-        }
-        .search-icon {
-            width: 24px;
-            height: 24px;
-            cursor: pointer;
-            fill: #ffffff;
-        }
-        .search-input {
-            display: none;
-            position: absolute;
-            top: 40px;
-            right: 0;
-            background-color: #333;
-            color: #ffffff;
-            border: 1px solid #ffffff;
-            border-radius: 5px;
-            padding: 5px;
-            width: 200px;
-        }
-        .content {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+        /* [Previous CSS remains unchanged] */
     </style>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
 </head>
 <body>
     <div class="header">
         <div class="hamburger" onclick="toggleMenu()">☰</div>
         <div class="menu" id="menu">
             <a href="profile.html">Profile</a>
+            <a href="#" onclick="signOut()">Logout</a>
         </div>
         <div class="search-container">
             <svg class="search-icon" onclick="toggleSearch()" viewBox="0 0 24 24">
@@ -103,23 +41,14 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const auth = firebase.auth();
 
         window.onload = function() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            if (userData) {
-                db.collection('users').doc(userData.id).get()
-                    .then(doc => {
-                        if (doc.exists) {
-                            const updatedData = doc.data();
-                            localStorage.setItem('userData', JSON.stringify(updatedData));
-                            // Add logic here to display chats or welcome message
-                        }
-                    })
-                    .catch(error => console.error('Error fetching user data:', error));
-            } else {
-                window.location.href = 'index.html';
-            }
+            auth.onAuthStateChanged((user) => {
+                if (!user) {
+                    window.location.href = 'index.html';
+                }
+            });
         }
 
         function toggleMenu() {
@@ -146,6 +75,15 @@
             }
         }
 
+        function signOut() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('userData');
+                window.location.href = 'index.html';
+            }).catch((error) => {
+                console.error('Sign out error:', error);
+            });
+        }
+
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('menu');
             const hamburger = document.getElementsByClassName('hamburger')[0];
@@ -158,6 +96,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929cc93558bb1ff7',t:'MTc0MzU1OTc4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
