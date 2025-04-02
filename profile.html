@@ -84,6 +84,7 @@
 
     <script>
         const client = new Appwrite.Client();
+        const account = new Appwrite.Account(client);
         const databases = new Appwrite.Databases(client);
 
         client
@@ -92,7 +93,7 @@
 
         const defaultDP = 'defaultdp.png';
 
-        window.onload = function() {
+        window.onload = async function() {
             const userData = JSON.parse(localStorage.getItem('userData'));
             if (userData) {
                 document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
@@ -119,7 +120,7 @@
                     localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('profilePic').src = userData.customDP;
 
-                    // Update Appwrite
+                    // Update Appwrite (without name)
                     await databases.updateDocument(
                         '67ed2a13003e4a7f3cf6', // Database ID
                         '67ed2a2000013d191949', // Collection ID
@@ -137,7 +138,7 @@
             localStorage.setItem('userData', JSON.stringify(userData));
             document.getElementById('profilePic').src = userData.image || defaultDP;
 
-            // Update Appwrite
+            // Update Appwrite (without name)
             await databases.updateDocument(
                 '67ed2a13003e4a7f3cf6', // Database ID
                 '67ed2a2000013d191949', // Collection ID
@@ -164,14 +165,7 @@
                     localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('userName').textContent = newName;
                     event.target.style.display = 'none';
-
-                    // Update Appwrite
-                    await databases.updateDocument(
-                        '67ed2a13003e4a7f3cf6', // Database ID
-                        '67ed2a2000013d191949', // Collection ID
-                        userData.id,
-                        { name: newName }
-                    );
+                    // No Appwrite update for name since it's not stored there
                 }
             }
         }
@@ -196,7 +190,7 @@
                     document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
 
-                    // Update Appwrite
+                    // Update Appwrite (without name)
                     await databases.updateDocument(
                         '67ed2a13003e4a7f3cf6', // Database ID
                         '67ed2a2000013d191949', // Collection ID
