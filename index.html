@@ -31,6 +31,18 @@
             margin-top: 20px;
             display: none;
         }
+        #customSignInBtn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none; /* Hidden by default, shown if GIS fails */
+        }
+        #customSignInBtn:hover {
+            background-color: #cccccc;
+        }
     </style>
     <!-- Load Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
@@ -43,6 +55,7 @@
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
         <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
+        <button id="customSignInBtn" onclick="signInWithGoogle()">Sign in with Google</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
@@ -64,9 +77,10 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // Google Client ID (replace with your actual Client ID from Google Cloud Console)
+        // Google Client ID
         const googleClientId = '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com';
 
+        // Handle GIS credential response
         function handleCredentialResponse(response) {
             try {
                 document.getElementById('loading').style.display = 'block';
@@ -75,25 +89,52 @@
                 const credential = response.credential;
                 const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                var userData = {
+                const userData = {
                     id: payload.sub,
                     name: payload.name,
                     email: payload.email,
                     image: payload.picture
                 };
 
-                // Save to Firestore
-                db.collection('users').doc(userData.id).set(userData, { merge: true })
-                    .then(() => {
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        window.location.href = 'home.html';
-                    })
-                    .catch(error => showError('Failed to save user data: ' + error.message));
+                saveUserData(userData);
             } catch (error) {
-                showError('Sign-in failed: ' + error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+                showError('GIS Sign-in failed: ' + error.message);
             }
+        }
+
+        // Firebase Google Sign-In
+        function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    const user = result.user;
+                    const userData = {
+                        id: user.uid,
+                        name: user.displayName,
+                        email: user.email,
+                        image: user.photoURL
+                    };
+                    saveUserData(userData);
+                })
+                .catch((error) => {
+                    showError('Firebase Sign-in failed: ' + error.message);
+                });
+        }
+
+        // Save user data to Firestore and redirect
+        function saveUserData(userData) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+
+            db.collection('users').doc(userData.id).set(userData, { merge: true })
+                .then(() => {
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    window.location.href = 'home.html';
+                })
+                .catch(error => showError('Failed to save user data: ' + error.message))
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
+                });
         }
 
         function showError(message) {
@@ -102,11 +143,11 @@
             errorDiv.style.display = 'block';
         }
 
-        window.onload = function() {
-            // Ensure Google Identity Services is loaded before initializing
+        // Initialize Google Sign-In with retry mechanism
+        function initializeGoogleSignIn() {
             if (typeof google !== 'undefined' && google.accounts) {
                 google.accounts.id.initialize({
-                    client_id: googleClientId, // Required for GIS button
+                    client_id: googleClientId,
                     callback: handleCredentialResponse,
                     auto_select: true
                 });
@@ -118,9 +159,15 @@
 
                 google.accounts.id.prompt();
             } else {
-                console.error('Google Identity Services not loaded yet.');
-                showError('Google Sign-In failed to load. Please refresh the page.');
+                console.warn('Google Identity Services not loaded yet. Retrying...');
+                document.getElementById('g_id_signin').style.display = 'none';
+                document.getElementById('customSignInBtn').style.display = 'block'; // Show fallback button
+                setTimeout(initializeGoogleSignIn, 1000); // Retry after 1 second
             }
+        }
+
+        window.onload = function() {
+            initializeGoogleSignIn();
         };
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929cc935499b2010',t:'MTc0MzU1OTc4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
