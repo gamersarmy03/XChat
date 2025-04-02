@@ -83,58 +83,65 @@
     </div>
 
     <script>
-        const { Client, Account, Databases } = Appwrite;
+        const client = new Appwrite.Client();
+        const databases = new Appwrite.Databases(client);
 
-        const defaultDP = 'defaultdp.png';
-        const client = new Client()
+        client
             .setEndpoint('https://cloud.appwrite.io/v1')
             .setProject('67ed2822002be4a5e417');
-        const account = new Account(client);
-        const database = new Databases(client);
-        const profilesCollection = '67ed2a2000013d191949';
 
-        window.onload = async function() {
-            try {
-                const user = await account.get();
-                if (!user) {
-                    window.location.href = 'index.html';
-                    return;
-                }
+        const defaultDP = 'defaultdp.png';
 
-                const profile = await database.getDocument(profilesCollection, user.$id);
-                document.getElementById('profilePic').src = profile.customDP || user.prefs.image || defaultDP;
-                document.getElementById('userName').textContent = profile.name;
-                document.getElementById('userEmail').textContent = profile.email;
-                const username = profile.customUsername || profile.email.split('@')[0];
+        window.onload = function() {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (userData) {
+                document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
+                document.getElementById('userName').textContent = userData.name;
+                document.getElementById('userEmail').textContent = userData.email;
+                const username = userData.customUsername || userData.email.split('@')[0];
                 document.getElementById('userUsername').textContent = '@' + username;
-
-                localStorage.setItem('userData', JSON.stringify(profile));
-            } catch (error) {
-                console.error('Error loading profile:', error);
+            } else {
                 window.location.href = 'index.html';
             }
         };
+
+        function changeDP() {
+            document.getElementById('dpInput').click();
+        }
 
         async function uploadDP(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = async function(e) {
-                    const user = await account.get();
-                    const customDP = e.target.result;
-                    await database.updateDocument(profilesCollection, user.$id, { customDP });
-                    document.getElementById('profilePic').src = customDP;
-                    updateLocalStorage('customDP', customDP);
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.customDP = e.target.result;
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    document.getElementById('profilePic').src = userData.customDP;
+
+                    // Update Appwrite
+                    await databases.updateDocument(
+                        '67ed2a2000013d191949',
+                        userData.id,
+                        { customDP: userData.customDP }
+                    );
                 };
                 reader.readAsDataURL(file);
             }
         }
 
         async function removeDP() {
-            const user = await account.get();
-            await database.updateDocument(profilesCollection, user.$id, { customDP: null });
-            document.getElementById('profilePic').src = defaultDP;
-            updateLocalStorage('customDP', null);
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            delete userData.customDP;
+            localStorage.setItem('userData', JSON.stringify(userData));
+            document.getElementById('profilePic').src = userData.image || defaultDP;
+
+            // Update Appwrite
+            await databases.updateDocument(
+                '67ed2a2000013d191949',
+                userData.id,
+                { customDP: null }
+            );
         }
 
         function toggleEditName() {
@@ -150,11 +157,18 @@
             if (event.key === 'Enter') {
                 const newName = event.target.value.trim();
                 if (newName) {
-                    const user = await account.get();
-                    await database.updateDocument(profilesCollection, user.$id, { name: newName });
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.name = newName;
+                    localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('userName').textContent = newName;
                     event.target.style.display = 'none';
-                    updateLocalStorage('name', newName);
+
+                    // Update Appwrite
+                    await databases.updateDocument(
+                        '67ed2a2000013d191949',
+                        userData.id,
+                        { name: newName }
+                    );
                 }
             }
         }
@@ -173,27 +187,26 @@
             if (event.key === 'Enter') {
                 const newUsername = event.target.value.trim();
                 if (newUsername) {
-                    const user = await account.get();
-                    await database.updateDocument(profilesCollection, user.$id, { customUsername: newUsername });
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.customUsername = newUsername;
+                    localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
-                    updateLocalStorage('customUsername', newUsername);
+
+                    // Update Appwrite
+                    await databases.updateDocument(
+                        '67ed2a2000013d191949',
+                        userData.id,
+                        { customUsername: newUsername }
+                    );
                 } else {
                     alert('Username cannot be empty');
                 }
             }
         }
 
-        async function signOut() {
-            await account.deleteSession('current');
-            localStorage.clear();
+        function signOut() {
             window.location.href = 'index.html';
-        }
-
-        function updateLocalStorage(key, value) {
-            const userData = JSON.parse(localStorage.getItem('userData')) || {};
-            userData[key] = value;
-            localStorage.setItem('userData', JSON.stringify(userData));
         }
     </script>
 </body>
