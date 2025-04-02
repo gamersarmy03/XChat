@@ -48,13 +48,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
-    <!-- Load Google Identity Services library -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
         <button id="customSignInBtn" onclick="signInWithGoogle()">Sign in with Google</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
@@ -74,74 +71,59 @@
             measurementId: "G-V1NX3MPEPP"
         };
 
-        // Initialize Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log('Firebase initialized');
-        } catch (error) {
-            console.error('Firebase initialization failed:', error);
-            showError('Failed to initialize Firebase: ' + error.message);
-        }
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-
-        // Google Client ID
-        const googleClientId = '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com';
-
-        // Handle GIS credential response
-        function handleCredentialResponse(response) {
-            console.log('GIS button clicked, response received:', response);
-            try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
-
-                const credential = response.credential;
-                const payload = JSON.parse(atob(credential.split('.')[1]));
-
-                const userData = {
-                    id: payload.sub,
-                    name: payload.name,
-                    email: payload.email,
-                    image: payload.picture
-                };
-
-                saveUserData(userData);
-            } catch (error) {
-                console.error('GIS processing error:', error);
-                showError('GIS Sign-in failed: ' + error.message);
+        // Wait for Firebase to load
+        function initializeFirebase() {
+            if (typeof firebase !== 'undefined' && firebase.app) {
+                console.log('Firebase SDK loaded');
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    console.log('Firebase initialized');
+                    setupAuth();
+                } catch (error) {
+                    console.error('Firebase initialization failed:', error);
+                    showError('Failed to initialize Firebase: ' + error.message);
+                }
+            } else {
+                console.warn('Firebase SDK not loaded yet, retrying...');
+                setTimeout(initializeFirebase, 500); // Retry every 500ms
             }
         }
 
-        // Firebase Google Sign-In
-        function signInWithGoogle() {
-            console.log('Custom Sign-in button clicked');
-            const provider = new firebase.auth.GoogleAuthProvider();
-            provider.addScope('profile email'); // Ensure basic profile info is requested
+        // Setup authentication
+        function setupAuth() {
+            const db = firebase.firestore();
+            const auth = firebase.auth();
 
-            auth.signInWithPopup(provider)
-                .then((result) => {
-                    console.log('Firebase Auth success:', result);
-                    const user = result.user;
-                    const userData = {
-                        id: user.uid,
-                        name: user.displayName,
-                        email: user.email,
-                        image: user.photoURL
-                    };
-                    saveUserData(userData);
-                })
-                .catch((error) => {
-                    console.error('Firebase Auth error:', error);
-                    if (error.code === 'auth/popup-blocked') {
-                        showError('Popup blocked by browser. Please allow popups and try again.');
-                    } else {
-                        showError('Sign-in failed: ' + error.message);
-                    }
-                });
+            window.signInWithGoogle = function() {
+                console.log('Sign-in button clicked');
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.addScope('profile email');
+
+                auth.signInWithPopup(provider)
+                    .then((result) => {
+                        console.log('Firebase Auth success:', result);
+                        const user = result.user;
+                        const userData = {
+                            id: user.uid,
+                            name: user.displayName,
+                            email: user.email,
+                            image: user.photoURL
+                        };
+                        saveUserData(userData, db);
+                    })
+                    .catch((error) => {
+                        console.error('Firebase Auth error:', error);
+                        if (error.code === 'auth/popup-blocked') {
+                            showError('Popup blocked by browser. Please allow popups and try again.');
+                        } else {
+                            showError('Sign-in failed: ' + error.message);
+                        }
+                    });
+            };
         }
 
         // Save user data to Firestore and redirect
-        function saveUserData(userData) {
+        function saveUserData(userData, db) {
             console.log('Saving user data:', userData);
             document.getElementById('loading').style.display = 'block';
             document.getElementById('error').style.display = 'none';
@@ -168,33 +150,10 @@
             errorDiv.style.display = 'block';
         }
 
-        // Initialize Google Sign-In
-        function initializeGoogleSignIn() {
-            console.log('Initializing GIS');
-            if (typeof google !== 'undefined' && google.accounts) {
-                console.log('GIS library loaded');
-                google.accounts.id.initialize({
-                    client_id: googleClientId,
-                    callback: handleCredentialResponse,
-                    auto_select: true
-                });
-
-                google.accounts.id.renderButton(
-                    document.getElementById('g_id_signin'),
-                    { theme: 'outline', size: 'large' }
-                );
-                console.log('GIS button rendered');
-                google.accounts.id.prompt();
-            } else {
-                console.warn('GIS library not loaded');
-                document.getElementById('g_id_signin').style.display = 'none';
-            }
-        }
-
-        // Run initialization after DOM is loaded
+        // Start Firebase initialization
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded');
-            initializeGoogleSignIn();
+            initializeFirebase();
         });
 
         console.log('Script ended');
