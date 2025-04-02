@@ -69,33 +69,105 @@
 
                 const userData = {
                     id: payload.sub,
-                    name: payload.name, // Keep name in userData for local use
+                    name: payload.name,
                     email: payload.email,
                     image: payload.picture
                 };
 
-                // Check if user profile exists in Appwrite
-                let profileDoc;
+                // Check if user profile exists in Appwrite (for each collection)
+
+                // 1. Email and Image Collection
+                let emailDoc;
                 try {
-                    profileDoc = await databases.getDocument(
+                    emailDoc = await databases.getDocument(
                         '67ed2a13003e4a7f3cf6', // Database ID
-                        '67ed2a2000013d191949', // Collection ID
+                        '67ed4d020023e9d65431', // Email Collection ID
                         payload.sub // Document ID (Google sub)
                     );
-                    // Merge Appwrite data with Google data (excluding name)
-                    userData.customDP = profileDoc.customDP || null;
-                    userData.customUsername = profileDoc.customUsername || null;
                 } catch (error) {
                     if (error.code === 404) {
-                        // New user, create profile in Appwrite (without name)
+                        // New user, create email and image document
                         await databases.createDocument(
                             '67ed2a13003e4a7f3cf6', // Database ID
-                            '67ed2a2000013d191949', // Collection ID
+                            '67ed4d020023e9d65431', // Email Collection ID
                             payload.sub, // Document ID
                             {
                                 email: payload.email,
-                                image: payload.picture,
-                                customDP: null,
+                                image: payload.picture
+                            }
+                        );
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // 2. Name Collection
+                let nameDoc;
+                try {
+                    nameDoc = await databases.getDocument(
+                        '67ed2a13003e4a7f3cf6', // Database ID
+                        '67ed4c9400230d389eba', // Name Collection ID
+                        payload.sub // Document ID
+                    );
+                    userData.name = nameDoc.name || payload.name;
+                } catch (error) {
+                    if (error.code === 404) {
+                        // New user, create name document
+                        await databases.createDocument(
+                            '67ed2a13003e4a7f3cf6', // Database ID
+                            '67ed4c9400230d389eba', // Name Collection ID
+                            payload.sub, // Document ID
+                            {
+                                name: payload.name
+                            }
+                        );
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // 3. Custom DP Collection
+                let dpDoc;
+                try {
+                    dpDoc = await databases.getDocument(
+                        '67ed2a13003e4a7f3cf6', // Database ID
+                        '67ed2a2000013d191949', // DP Collection ID
+                        payload.sub // Document ID
+                    );
+                    userData.customDP = dpDoc.customDP || null;
+                } catch (error) {
+                    if (error.code === 404) {
+                        // New user, create DP document
+                        await databases.createDocument(
+                            '67ed2a13003e4a7f3cf6', // Database ID
+                            '67ed2a2000013d191949', // DP Collection ID
+                            payload.sub, // Document ID
+                            {
+                                customDP: null
+                            }
+                        );
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // 4. Custom Username Collection
+                let usernameDoc;
+                try {
+                    usernameDoc = await databases.getDocument(
+                        '67ed2a13003e4a7f3cf6', // Database ID
+                        '67ed4ccc003aeb32a47b', // Username Collection ID
+                        payload.sub // Document ID
+                    );
+                    userData.customUsername = usernameDoc.customUsername || null;
+                } catch (error) {
+                    if (error.code === 404) {
+                        // New user, create username document
+                        await databases.createDocument(
+                            '67ed2a13003e4a7f3cf6', // Database ID
+                            '67ed4ccc003aeb32a47b', // Username Collection ID
+                            payload.sub, // Document ID
+                            {
                                 customUsername: null
                             }
                         );
