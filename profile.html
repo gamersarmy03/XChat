@@ -56,9 +56,11 @@
             margin-right: 5px;
         }
         #usernameInput {
-            width: 180px; /* Adjusted to account for prefix */
+            width: 180px;
         }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="profile-container">
@@ -82,21 +84,29 @@
     </div>
 
     <script>
-        const defaultDP = 'defaultdp.png'; // Path to your default DP image
+        const firebaseConfig = {
+            apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
+            authDomain: "xchit-dfebf.firebaseapp.com",
+            projectId: "xchit-dfebf",
+            storageBucket: "xchit-dfebf.firebasestorage.app",
+            messagingSenderId: "210249328132",
+            appId: "1:210249328132:web:34fb51c0e1f07866f5f751"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        // Load user data on page load
+        const defaultDP = 'defaultdp.png';
+
         window.onload = function() {
             const userData = JSON.parse(localStorage.getItem('userData'));
             if (userData) {
                 document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
                 document.getElementById('userName').textContent = userData.name;
                 document.getElementById('userEmail').textContent = userData.email;
-
-                // Display username with @ prefix, use customUsername or derive from email
                 const username = userData.customUsername || userData.email.split('@')[0];
                 document.getElementById('userUsername').textContent = '@' + username;
             } else {
-                window.location.href = 'index.html'; // Redirect to login if no user data
+                window.location.href = 'index.html';
             }
         }
 
@@ -113,6 +123,9 @@
                     userData.customDP = e.target.result;
                     localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('profilePic').src = userData.customDP;
+                    db.collection('users').doc(userData.id).set({
+                        customDP: userData.customDP
+                    }, { merge: true }).catch(error => console.error('Error saving DP:', error));
                 };
                 reader.readAsDataURL(file);
             }
@@ -123,6 +136,9 @@
             delete userData.customDP;
             localStorage.setItem('userData', JSON.stringify(userData));
             document.getElementById('profilePic').src = defaultDP;
+            db.collection('users').doc(userData.id).update({
+                customDP: firebase.firestore.FieldValue.delete()
+            }).catch(error => console.error('Error removing DP:', error));
         }
 
         function toggleEditName() {
@@ -143,6 +159,9 @@
                     localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('userName').textContent = newName;
                     event.target.style.display = 'none';
+                    db.collection('users').doc(userData.id).set({
+                        name: newName
+                    }, { merge: true }).catch(error => console.error('Error saving name:', error));
                 }
             }
         }
@@ -152,8 +171,7 @@
             usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
             if (usernameInput.style.display === 'block') {
                 usernameInput.focus();
-                // Pre-fill with current username (without @)
-                const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove @
+                const currentUsername = document.getElementById('userUsername').textContent.slice(1);
                 usernameInput.value = currentUsername;
             }
         }
@@ -163,10 +181,13 @@
                 const newUsername = event.target.value.trim();
                 if (newUsername) {
                     const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customUsername = newUsername; // Store without @
+                    userData.customUsername = newUsername;
                     localStorage.setItem('userData', JSON.stringify(userData));
                     document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
+                    db.collection('users').doc(userData.id).set({
+                        customUsername: newUsername
+                    }, { merge: true }).catch(error => console.error('Error saving username:', error));
                 } else {
                     alert('Username cannot be empty');
                 }
@@ -174,10 +195,9 @@
         }
 
         function signOut() {
-    // Optionally, clear only specific session data if needed
-    // For now, just redirect without clearing userData
-    window.location.href = 'index.html';
-}
+            window.location.href = 'index.html';
+        }
     </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929d9d471dbfed86',t:'MTc0MzU2ODQ3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
