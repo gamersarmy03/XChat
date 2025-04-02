@@ -32,11 +32,7 @@
             display: none;
         }
     </style>
-    <!-- Load Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- Load Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="login-container">
@@ -47,20 +43,7 @@
     </div>
 
     <script>
-        // Initialize Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAo7bMCut8I1uieKxCkLiFhjuy0F7DBXvE",
-            authDomain: "xchit-dfebf.firebaseapp.com",
-            projectId: "xchit-dfebf",
-            storageBucket: "xchit-dfebf.firebasestorage.app",
-            messagingSenderId: "210249328132",
-            appId: "1:210249328132:web:34fb51c0e1f07866f5f751"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // Google Sign-In handling
-        function handleCredentialResponse(response) {
+        async function handleCredentialResponse(response) {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
@@ -75,25 +58,44 @@
                     image: payload.picture
                 };
 
-                db.collection('users').doc(payload.sub).get()
-                    .then((doc) => {
-                        if (doc.exists) {
-                            const customData = doc.data();
-                            userData.customDP = customData.customDP || userData.customDP;
-                            userData.customUsername = customData.customUsername || userData.customUsername;
-                            userData.name = customData.name || userData.name;
-                        }
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        window.location.href = 'home.html';
-                    })
-                    .catch((error) => {
-                        console.error('Error fetching customizations:', error);
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        window.location.href = 'home.html';
-                    });
+                const githubData = await fetchUserDataFromGitHub(userData.email);
+                if (githubData) {
+                    userData = { ...userData, ...githubData };
+                }
+
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
             } catch (error) {
                 showError('Sign-in failed: ' + error.message);
+            } finally {
                 document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function fetchUserDataFromGitHub(email) {
+            // Replace with your NEW fine-grained PAT (Contents read/write for gamersarmy03/xchitstorage)
+            const token = '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';
+            const repo = 'gamersarmy03/xchitstorage';
+            const filePath = `${email}.json`;
+
+            try {
+                const response = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = JSON.parse(atob(data.content));
+                    return content;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching GitHub data:', error);
+                return null;
             }
         }
 
@@ -103,14 +105,7 @@
             errorDiv.style.display = 'block';
         }
 
-        // Initialize Google Sign-In when GIS library is loaded
         window.onload = function() {
-            if (typeof google === 'undefined') {
-                console.error('Google Identity Services not loaded');
-                showError('Failed to load sign-in service. Please try again later.');
-                return;
-            }
-
             google.accounts.id.initialize({
                 client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
                 callback: handleCredentialResponse,
@@ -125,6 +120,6 @@
             google.accounts.id.prompt();
         };
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929d9d471c47c01f',t:'MTc0MzU2ODQ3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'929dbb118db4b0dc',t:'MTc0MzU2OTY5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
