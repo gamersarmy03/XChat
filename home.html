@@ -71,7 +71,7 @@
             align-items: center;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/index.umd.min.js"></script>
 </head>
 <body>
     <div class="header">
@@ -91,7 +91,7 @@
     </div>
 
     <script>
-        const { Client, Account, Databases } = Appwrite;
+        const { Client, Account, Databases, ID } = Appwrite;
         const client = new Client()
             .setEndpoint('https://cloud.appwrite.io/v1')
             .setProject('67ed2822002be4a5e417');
@@ -122,20 +122,21 @@
                 try {
                     await databases.getDocument(databaseId, nameCollectionId, user.$id);
                 } catch (e) {
-                    await databases.createDocument(databaseId, nameCollectionId, user.$id, { name: user.name });
+                    await databases.createDocument(databaseId, nameCollectionId, user.$id, { name: user.name }, ['role:user'], ['role:user']);
                 }
                 try {
                     await databases.getDocument(databaseId, usernameCollectionId, user.$id);
                 } catch (e) {
-                    await databases.createDocument(databaseId, usernameCollectionId, user.$id, { username: user.email.split('@')[0] });
+                    await databases.createDocument(databaseId, usernameCollectionId, user.$id, { username: user.email.split('@')[0] }, ['role:user'], ['role:user']);
                 }
                 try {
                     await databases.getDocument(databaseId, pictureCollectionId, user.$id);
                 } catch (e) {
-                    await databases.createDocument(databaseId, pictureCollectionId, user.$id, { picture: 'defaultdp.png' });
+                    await databases.createDocument(databaseId, pictureCollectionId, user.$id, { picture: 'defaultdp.png' }, ['role:user'], ['role:user']);
                 }
             } catch (error) {
-                window.location.href = 'index.html'; // Redirect to login if not authenticated
+                console.error('Home page error:', error);
+                window.location.href = 'index.html';
             }
         };
 
