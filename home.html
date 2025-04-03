@@ -91,55 +91,49 @@
     </div>
 
     <script>
-        // Load user data on page load
-        window.onload = function() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            if (!userData) {
-                window.location.href = 'index.html'; // Redirect to login if no user data
-            }
-            // For now, we assume no chats exist, so show "Welcome to XChit"
-            // Later, you can add logic here to check for chats
-        }
+  window.onload = function() {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (!userData) {
+      window.location.href = 'index.html';
+    }
+    // Add chat loading logic here later
+  };
 
-        function toggleMenu() {
-            const menu = document.getElementById('menu');
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-            // Hide search input when menu is toggled
-            document.getElementById('searchInput').style.display = 'none';
-        }
+  function toggleMenu() {
+    const menu = document.getElementById('menu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    document.getElementById('searchInput').style.display = 'none';
+  }
 
-        function toggleSearch() {
-            const searchInput = document.getElementById('searchInput');
-            searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
-            // Hide menu when search is toggled
-            document.getElementById('menu').style.display = 'none';
-            if (searchInput.style.display === 'block') {
-                searchInput.focus(); // Focus the input when shown
-            }
-        }
+  function toggleSearch() {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
+    document.getElementById('menu').style.display = 'none';
+    if (searchInput.style.display === 'block') {
+      searchInput.focus();
+    }
+  }
 
-        function search(event) {
-            const query = event.target.value.trim();
-            if (event.key === 'Enter' && query) {
-                console.log('Searching for:', query);
-                // Add your search logic here (e.g., filter @users or chats)
-                event.target.value = ''; // Clear input after search
-                toggleSearch(); // Hide search input after Enter
-            }
-        }
+  function search(event) {
+    const query = event.target.value.trim();
+    if (event.key === 'Enter' && query) {
+      console.log('Searching for:', query);
+      event.target.value = '';
+      toggleSearch();
+    }
+  }
 
-        // Hide menu or search when clicking outside
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('menu');
-            const hamburger = document.getElementsByClassName('hamburger')[0];
-            const searchContainer = document.getElementsByClassName('search-container')[0];
-            if (!menu.contains(event.target) && !hamburger.contains(event.target)) {
-                menu.style.display = 'none';
-            }
-            if (!searchContainer.contains(event.target) && event.target !== document.getElementById('searchInput')) {
-                document.getElementById('searchInput').style.display = 'none';
-            }
-        });
-    </script>
+  document.addEventListener('click', function(event) {
+    const menu = document.getElementById('menu');
+    const hamburger = document.getElementsByClassName('hamburger')[0];
+    const searchContainer = document.getElementsByClassName('search-container')[0];
+    if (!menu.contains(event.target) && !hamburger.contains(event.target)) {
+      menu.style.display = 'none';
+    }
+    if (!searchContainer.contains(event.target) && event.target !== document.getElementById('searchInput')) {
+      document.getElementById('searchInput').style.display = 'none';
+    }
+  });
+</script>
 </body>
 </html>
