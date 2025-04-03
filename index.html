@@ -52,7 +52,7 @@
             background-color: #cccccc;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/index.umd.min.js"></script>
 </head>
 <body>
     <div class="login-container">
@@ -64,6 +64,7 @@
     </div>
 
     <script>
+        // Ensure Appwrite is properly initialized
         const { Client, Account } = Appwrite;
         const client = new Client()
             .setEndpoint('https://cloud.appwrite.io/v1') // Your Appwrite endpoint
@@ -82,14 +83,17 @@
             document.getElementById('error').style.display = 'none';
 
             try {
-                await account.createMagicURLSession(
-                    'unique()', // User ID (auto-generated if 'unique()')
+                // Use createMagicURLSession for Appwrite 1.0+ (including 17.0.1)
+                const response = await account.createMagicURLSession(
+                    Appwrite.ID.unique(), // Generate unique user ID
                     email,
-                    `${window.location.origin}/home.html` // Redirect URL after magic link verification
+                    `${window.location.origin}/home.html` // Redirect URL
                 );
+                console.log('Magic link response:', response); // Debug log
                 alert('Magic link sent! Check your email.');
                 document.getElementById('emailInput').value = ''; // Clear input
             } catch (error) {
+                console.error('Error details:', error); // Log full error for debugging
                 showError('Failed to send magic link: ' + error.message);
             } finally {
                 document.getElementById('loading').style.display = 'none';
