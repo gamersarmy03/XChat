@@ -31,74 +31,87 @@
             margin-top: 20px;
             display: none;
         }
+        .login-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .login-btn:hover {
+            background-color: #cccccc;
+        }
     </style>
-    <!-- Load the Google Identity Services library -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Load Appwrite SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.min.js"></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
+        <button class="login-btn" onclick="login()">Login Anonymously</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
 
     <script>
-  const WORKER_URL = 'https://xchit-user-data.ff3005000.workers.dev'; // Replace with your Worker URL
+        const { Client, Account, Databases } = Appwrite;
+        const client = new Client()
+            .setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
+            .setProject('67ed2822002be4a5e417'); // Your Project ID
 
-  async function handleCredentialResponse(response) {
-    try {
-      document.getElementById('loading').style.display = 'block';
-      document.getElementById('error').style.display = 'none';
+        const account = new Account(client);
+        const databases = new Databases(client);
 
-      const credential = response.credential;
-      const payload = JSON.parse(atob(credential.split('.')[1]));
+        async function login() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
 
-      // Fetch existing user data from Cloudflare KV
-      const userId = payload.sub;
-      const fetchResponse = await fetch(`${WORKER_URL}?userId=${userId}`);
-      let userData = await fetchResponse.json();
+                // Create an anonymous session
+                const session = await account.createAnonymousSession();
+                const userId = session.userId;
 
-      // If no data exists, initialize with Google payload
-      if (Object.keys(userData).length === 0) {
-        userData = {
-          id: userId,
-          name: payload.name,
-          email: payload.email,
-          image: payload.picture,
-        };
-      }
+                // Check if user profile exists in the database
+                let userData;
+                try {
+                    userData = await databases.getDocument(
+                        'default', // Database ID (replace if different)
+                        '67ee04300014f5069e03', // Collection ID
+                        userId
+                    );
+                } catch (e) {
+                    // If no profile exists, create one
+                    userData = {
+                        userId: userId,
+                        name: 'Anonymous User',
+                        email: '',
+                        customDP: '',
+                        customUsername: ''
+                    };
+                    await databases.createDocument(
+                        'default', // Database ID
+                        '67ee04300014f5069e03', // Collection ID
+                        userId, // Document ID
+                        userData
+                    );
+                }
 
-      // Store locally for this session
-      localStorage.setItem('userData', JSON.stringify(userData));
-      window.location.href = 'home.html';
-    } catch (error) {
-      showError('Sign-in failed: ' + error.message);
-    } finally {
-      document.getElementById('loading').style.display = 'none';
-    }
-  }
+                // Store userData in localStorage for consistency with existing code
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
+            } catch (error) {
+                showError('Login failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
 
-  function showError(message) {
-    const errorDiv = document.getElementById('error');
-    errorDiv.textContent = message;
-    errorDiv.style.display = 'block';
-  }
-
-  window.onload = function() {
-    google.accounts.id.initialize({
-      client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
-      callback: handleCredentialResponse,
-      auto_select: true,
-    });
-
-    google.accounts.id.renderButton(
-      document.getElementById('g_id_signin'),
-      { theme: 'outline', size: 'large' }
-    );
-
-    google.accounts.id.prompt();
-  };
-</script>
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
