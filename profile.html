@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - XChit</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .profile-container {
+            text-align: center;
+        }
+        .profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+        .edit-btn, .logout-btn, .remove-dp-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .edit-btn:hover, .logout-btn:hover, .remove-dp-btn:hover {
+            background-color: #cccccc;
+        }
+        .edit-input {
+            display: none;
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            margin: 5px 0;
+            width: 200px;
+        }
+        .username-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .username-prefix {
+            color: #ffffff;
+            margin-right: 5px;
+        }
+        #usernameInput {
+            width: 180px; /* Adjusted to account for prefix */
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <img id="profilePic" class="profile-pic" alt="Profile Picture">
+        <div>
+            <button class="edit-btn" onclick="changeDP()">Change DP</button>
+            <button class="remove-dp-btn" onclick="removeDP()">Remove DP</button>
+            <input type="file" id="dpInput" accept="image/*" style="display: none;" onchange="uploadDP(event)">
+        </div>
+        <h2 id="userName"></h2>
+        <button class="edit-btn" onclick="toggleEditName()">Change Name</button>
+        <input type="text" id="nameInput" class="edit-input" placeholder="Enter new name" onkeyup="updateName(event)">
+        <p id="userUsername"></p>
+        <button class="edit-btn" onclick="toggleEditUsername()">Change Username</button>
+        <div class="username-container">
+            <span class="username-prefix">@</span>
+            <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
+        </div>
+        <p id="userEmail"></p>
+        <button class="logout-btn" onclick="signOut()">Logout</button>
+    </div>
+
+    <script>
+        const defaultDP = 'defaultdp.png'; // Path to your default DP image
+
+        // Load user data on page load
+        window.onload = function() {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (userData) {
+                document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
+                document.getElementById('userName').textContent = userData.name;
+                document.getElementById('userEmail').textContent = userData.email;
+
+                // Display username with @ prefix, use customUsername or derive from email
+                const username = userData.customUsername || userData.email.split('@')[0];
+                document.getElementById('userUsername').textContent = '@' + username;
+            } else {
+                window.location.href = 'index.html'; // Redirect to login if no user data
+            }
+        }
+
+        function changeDP() {
+            document.getElementById('dpInput').click();
+        }
+
+        function uploadDP(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.customDP = e.target.result;
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    document.getElementById('profilePic').src = userData.customDP;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removeDP() {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            delete userData.customDP;
+            localStorage.setItem('userData', JSON.stringify(userData));
+            document.getElementById('profilePic').src = defaultDP;
+        }
+
+        function toggleEditName() {
+            const nameInput = document.getElementById('nameInput');
+            nameInput.style.display = nameInput.style.display === 'block' ? 'none' : 'block';
+            if (nameInput.style.display === 'block') {
+                nameInput.focus();
+                nameInput.value = document.getElementById('userName').textContent;
+            }
+        }
+
+        function updateName(event) {
+            if (event.key === 'Enter') {
+                const newName = event.target.value.trim();
+                if (newName) {
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.name = newName;
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    document.getElementById('userName').textContent = newName;
+                    event.target.style.display = 'none';
+                }
+            }
+        }
+
+        function toggleEditUsername() {
+            const usernameInput = document.getElementById('usernameInput');
+            usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
+            if (usernameInput.style.display === 'block') {
+                usernameInput.focus();
+                // Pre-fill with current username (without @)
+                const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove @
+                usernameInput.value = currentUsername;
+            }
+        }
+
+        function updateUsername(event) {
+            if (event.key === 'Enter') {
+                const newUsername = event.target.value.trim();
+                if (newUsername) {
+                    const userData = JSON.parse(localStorage.getItem('userData'));
+                    userData.customUsername = newUsername; // Store without @
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    document.getElementById('userUsername').textContent = '@' + newUsername;
+                    event.target.style.display = 'none';
+                } else {
+                    alert('Username cannot be empty');
+                }
+            }
+        }
+
+        function signOut() {
+    // Optionally, clear only specific session data if needed
+    // For now, just redirect without clearing userData
+    window.location.href = 'index.html';
+}
+    </script>
+</body>
+</html>
