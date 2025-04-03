@@ -82,102 +82,109 @@
     </div>
 
     <script>
-        const defaultDP = 'defaultdp.png'; // Path to your default DP image
+  const WORKER_URL = 'https://xchit-user-data.ff3005000.workers.dev'; // Replace with your Worker URL
+  const defaultDP = 'defaultdp.png';
 
-        // Load user data on page load
-        window.onload = function() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            if (userData) {
-                document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
-                document.getElementById('userName').textContent = userData.name;
-                document.getElementById('userEmail').textContent = userData.email;
+  window.onload = function() {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (userData) {
+      document.getElementById('profilePic').src = userData.customDP || userData.image || defaultDP;
+      document.getElementById('userName').textContent = userData.name;
+      document.getElementById('userEmail').textContent = userData.email;
+      const username = userData.customUsername || userData.email.split('@')[0];
+      document.getElementById('userUsername').textContent = '@' + username;
+    } else {
+      window.location.href = 'index.html';
+    }
+  };
 
-                // Display username with @ prefix, use customUsername or derive from email
-                const username = userData.customUsername || userData.email.split('@')[0];
-                document.getElementById('userUsername').textContent = '@' + username;
-            } else {
-                window.location.href = 'index.html'; // Redirect to login if no user data
-            }
-        }
+  async function saveToCloudflare(userData) {
+    await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+  }
 
-        function changeDP() {
-            document.getElementById('dpInput').click();
-        }
+  function changeDP() {
+    document.getElementById('dpInput').click();
+  }
 
-        function uploadDP(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customDP = e.target.result;
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    document.getElementById('profilePic').src = userData.customDP;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
+  function uploadDP(event) {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        userData.customDP = e.target.result;
+        localStorage.setItem('userData', JSON.stringify(userData));
+        await saveToCloudflare(userData);
+        document.getElementById('profilePic').src = userData.customDP;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
 
-        function removeDP() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            delete userData.customDP;
-            localStorage.setItem('userData', JSON.stringify(userData));
-            document.getElementById('profilePic').src = defaultDP;
-        }
+  function removeDP() {
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    delete userData.customDP;
+    localStorage.setItem('userData', JSON.stringify(userData));
+    saveToCloudflare(userData);
+    document.getElementById('profilePic').src = defaultDP;
+  }
 
-        function toggleEditName() {
-            const nameInput = document.getElementById('nameInput');
-            nameInput.style.display = nameInput.style.display === 'block' ? 'none' : 'block';
-            if (nameInput.style.display === 'block') {
-                nameInput.focus();
-                nameInput.value = document.getElementById('userName').textContent;
-            }
-        }
+  function toggleEditName() {
+    const nameInput = document.getElementById('nameInput');
+    nameInput.style.display = nameInput.style.display === 'block' ? 'none' : 'block';
+    if (nameInput.style.display === 'block') {
+      nameInput.focus();
+      nameInput.value = document.getElementById('userName').textContent;
+    }
+  }
 
-        function updateName(event) {
-            if (event.key === 'Enter') {
-                const newName = event.target.value.trim();
-                if (newName) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.name = newName;
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    document.getElementById('userName').textContent = newName;
-                    event.target.style.display = 'none';
-                }
-            }
-        }
+  async function updateName(event) {
+    if (event.key === 'Enter') {
+      const newName = event.target.value.trim();
+      if (newName) {
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        userData.name = newName;
+        localStorage.setItem('userData', JSON.stringify(userData));
+        await saveToCloudflare(userData);
+        document.getElementById('userName').textContent = newName;
+        event.target.style.display = 'none';
+      }
+    }
+  }
 
-        function toggleEditUsername() {
-            const usernameInput = document.getElementById('usernameInput');
-            usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
-            if (usernameInput.style.display === 'block') {
-                usernameInput.focus();
-                // Pre-fill with current username (without @)
-                const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove @
-                usernameInput.value = currentUsername;
-            }
-        }
+  function toggleEditUsername() {
+    const usernameInput = document.getElementById('usernameInput');
+    usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
+    if (usernameInput.style.display === 'block') {
+      usernameInput.focus();
+      const currentUsername = document.getElementById('userUsername').textContent.slice(1);
+      usernameInput.value = currentUsername;
+    }
+  }
 
-        function updateUsername(event) {
-            if (event.key === 'Enter') {
-                const newUsername = event.target.value.trim();
-                if (newUsername) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customUsername = newUsername; // Store without @
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    document.getElementById('userUsername').textContent = '@' + newUsername;
-                    event.target.style.display = 'none';
-                } else {
-                    alert('Username cannot be empty');
-                }
-            }
-        }
+  async function updateUsername(event) {
+    if (event.key === 'Enter') {
+      const newUsername = event.target.value.trim();
+      if (newUsername) {
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        userData.customUsername = newUsername;
+        localStorage.setItem('userData', JSON.stringify(userData));
+        await saveToCloudflare(userData);
+        document.getElementById('userUsername').textContent = '@' + newUsername;
+        event.target.style.display = 'none';
+      } else {
+        alert('Username cannot be empty');
+      }
+    }
+  }
 
-        function signOut() {
-    // Optionally, clear only specific session data if needed
-    // For now, just redirect without clearing userData
+  function signOut() {
     window.location.href = 'index.html';
-}
-    </script>
+  }
+</script>
 </body>
 </html>
