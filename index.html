@@ -4,202 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <style>
-        body {
-            background-color: #000000;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-        .login-container {
-            text-align: center;
-        }
-        .logo {
-            max-width: 200px;
-            margin-bottom: 20px;
-        }
-        .login-input {
-            background-color: #333;
-            color: #ffffff;
-            border: 1px solid #ffffff;
-            border-radius: 5px;
-            padding: 5px;
-            margin: 5px 0;
-            width: 200px;
-        }
-        .login-btn {
-            background-color: #ffffff;
-            color: #000000;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        .login-btn:hover {
-            background-color: #cccccc;
-        }
-        .loading {
-            display: none;
-            margin-top: 20px;
-        }
-        .error {
-            color: #ff4444;
-            margin-top: 20px;
-            display: none;
-        }
-    </style>
-    <!-- Appwrite SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.umd.min.js"></script>
-</head>
+    </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <input type="email" id="emailInput" class="login-input" placeholder="Email">
-        <input type="password" id="passwordInput" class="login-input" placeholder="Password">
-        <button class="login-btn" onclick="login()">Login</button>
-        <button class="login-btn" onclick="register()">Register</button>
+        <div>
+            <input type="email" id="emailInput" placeholder="Enter your email">
+            <button onclick="sendMagicLink()">Send Magic Link</button>
+        </div>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
     <script>
-        const { Client, Account, Databases } = Appwrite;
+        const { Client, Account } = Appwrite;
 
-        // Initialize Appwrite client
         const client = new Client();
-        client
-            .setEndpoint('https://cloud.appwrite.io/v1') // Default Appwrite endpoint
-            .setProject('67ed2822002be4a5e417'); // Your project ID
+        client.setEndpoint('https://cloud.appwrite.io/v1')
+              .setProject('67ed2822002be4a5e417');
 
         const account = new Account(client);
-        const databases = new Databases(client);
 
-        // Collection IDs
-        const COLLECTIONS = {
-            number: '67ee04300014f5069e03',
-            email: '67ed4d020023e9d65431',
-            username: '67ed4ccc003aeb32a47b',
-            name: '67ed4c9400230d389eba',
-            picture: '67ed2a2000013d191949'
-        };
-
-        function login() {
-            const email = document.getElementById('emailInput').value.trim();
-            const password = document.getElementById('passwordInput').value.trim();
-
-            if (!email || !password) {
-                showError("Please enter both email and password");
-                return;
+        async function sendMagicLink() {
+            const email = document.getElementById('emailInput').value;
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                await account.createMagicSession(email, window.location.href); // Redirect back to this page
+                alert('Magic link sent to your email. Please check your inbox.');
+            } catch (error) {
+                showError('Failed to send magic link: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
-
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-
-            account.createEmailPasswordSession(email, password)
-                .then((session) => {
-                    console.log("Login successful:", session);
-                    return account.get();
-                })
-                .then((user) => {
-                    console.log("User data:", user);
-                    const userData = {
-                        id: user.$id,
-                        name: user.name || 'User',
-                        email: user.email,
-                        image: 'defaultdp.png' // Default picture
-                    };
-
-                    // Fetch or set user data in collections
-                    return Promise.all([
-                        databases.listDocuments('default', COLLECTIONS.name, [`equal("userId", "${user.$id}")`]),
-                        databases.listDocuments('default', COLLECTIONS.email, [`equal("userId", "${user.$id}")`]),
-                        databases.listDocuments('default', COLLECTIONS.username, [`equal("userId", "${user.$id}")`]),
-                        databases.listDocuments('default', COLLECTIONS.picture, [`equal("userId", "${user.$id}")`])
-                    ]).then(([nameDocs, emailDocs, usernameDocs, pictureDocs]) => {
-                        userData.name = nameDocs.documents[0]?.name || userData.name;
-                        userData.email = emailDocs.documents[0]?.email || userData.email;
-                        userData.username = usernameDocs.documents[0]?.username || userData.email.split('@')[0];
-                        userData.customDP = pictureDocs.documents[0]?.url || userData.image;
-
-                        // If no data exists, create it
-                        if (!nameDocs.documents.length) {
-                            databases.createDocument('default', COLLECTIONS.name, 'unique()', { userId: user.$id, name: userData.name });
-                        }
-                        if (!emailDocs.documents.length) {
-                            databases.createDocument('default', COLLECTIONS.email, 'unique()', { userId: user.$id, email: userData.email });
-                        }
-                        if (!usernameDocs.documents.length) {
-                            databases.createDocument('default', COLLECTIONS.username, 'unique()', { userId: user.$id, username: userData.username });
-                        }
-                        if (!pictureDocs.documents.length) {
-                            databases.createDocument('default', COLLECTIONS.picture, 'unique()', { userId: user.$id, url: userData.customDP });
-                        }
-
-                        return userData;
-                    });
-                })
-                .then((userData) => {
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    window.location.href = 'home.html';
-                })
-                .catch((error) => {
-                    console.error("Login failed:", error);
-                    showError("Login failed: " + error.message);
-                })
-                .finally(() => {
-                    document.getElementById('loading').style.display = 'none';
-                });
         }
 
-        function register() {
-            const email = document.getElementById('emailInput').value.trim();
-            const password = document.getElementById('passwordInput').value.trim();
+        // Handle magic link redirection (you'll need to adapt this based on your routing)
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('userId');
+        const secret = params.get('secret');
 
-            if (!email || !password) {
-                showError("Please enter both email and password");
-                return;
+        if (userId && secret) {
+            confirmMagicLinkLogin(userId, secret);
+        }
+
+        async function confirmMagicLinkLogin(userId, secret) {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                await account.updateMagicSession(userId, secret);
+                // Fetch user data from Appwrite and store it
+                const user = await account.get();
+                // Fetch additional profile data from your collections
+                const userData = {
+                    id: user.$id,
+                    email: user.email
+                    // Fetch name, username, picture from collections
+                };
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
+            } catch (error) {
+                showError('Magic link verification failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
-
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-
-            account.create('unique()', email, password)
-                .then((user) => {
-                    console.log("Registration successful:", user);
-                    const userData = {
-                        id: user.$id,
-                        name: 'User',
-                        email: user.email,
-                        image: 'defaultdp.png'
-                    };
-
-                    // Create initial user data in collections
-                    return Promise.all([
-                        databases.createDocument('default', COLLECTIONS.name, 'unique()', { userId: user.$id, name: userData.name }),
-                        databases.createDocument('default', COLLECTIONS.email, 'unique()', { userId: user.$id, email: userData.email }),
-                        databases.createDocument('default', COLLECTIONS.username, 'unique()', { userId: user.$id, username: userData.email.split('@')[0] }),
-                        databases.createDocument('default', COLLECTIONS.picture, 'unique()', { userId: user.$id, url: userData.image })
-                    ]).then(() => userData);
-                })
-                .then((userData) => {
-                    return account.createEmailPasswordSession(email, password).then(() => userData);
-                })
-                .then((userData) => {
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    window.location.href = 'home.html';
-                })
-                .catch((error) => {
-                    console.error("Registration failed:", error);
-                    showError("Registration failed: " + error.message);
-                })
-                .finally(() => {
-                    document.getElementById('loading').style.display = 'none';
-                });
         }
 
         function showError(message) {
