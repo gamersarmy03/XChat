@@ -49,7 +49,7 @@
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <button class="login-btn" onclick="login()">Login Anonymously</button>
+        <button class="login-btn" onclick="loginWithGoogle()">Login with Google</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
@@ -63,45 +63,63 @@
         const account = new Account(client);
         const databases = new Databases(client);
 
-        async function login() {
+        async function loginWithGoogle() {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                // Create an anonymous session
-                const session = await account.createAnonymousSession();
-                const userId = session.userId;
-
-                // Check if user profile exists in the database
-                let userData;
-                try {
-                    userData = await databases.getDocument(
-                        'default', // Database ID (replace if different)
-                        '67ee04300014f5069e03', // Collection ID
-                        userId
-                    );
-                } catch (e) {
-                    // If no profile exists, create one
-                    userData = {
-                        userId: userId,
-                        name: 'Anonymous User',
-                        email: '',
-                        customDP: '',
-                        customUsername: ''
-                    };
-                    await databases.createDocument(
-                        'default', // Database ID
-                        '67ee04300014f5069e03', // Collection ID
-                        userId, // Document ID
-                        userData
-                    );
-                }
-
-                // Store userData in localStorage for consistency with existing code
-                localStorage.setItem('userData', JSON.stringify(userData));
-                window.location.href = 'home.html';
+                // Initiate Google OAuth login with Appwrite
+                account.createOAuth2Session(
+                    'google',
+                    window.location.origin + '/home.html', // Success redirect URL
+                    window.location.origin + '/index.html' // Failure redirect URL
+                );
             } catch (error) {
                 showError('Login failed: ' + error.message);
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Handle OAuth callback
+        window.onload = async function() {
+            try {
+                // Check if this is a redirect from OAuth
+                const user = await account.get();
+                if (user) {
+                    document.getElementById('loading').style.display = 'block';
+
+                    // Fetch or create user profile in Appwrite database
+                    let userData;
+                    try {
+                        userData = await databases.getDocument(
+                            'default', // Database ID (replace if different)
+                            '67ee04300014f5069e03', // Collection ID
+                            user.$id
+                        );
+                    } catch (e) {
+                        // If no profile exists, create one with Google data
+                        userData = {
+                            userId: user.$id,
+                            name: user.name || 'Google User',
+                            email: user.email || '',
+                            customDP: '',
+                            customUsername: ''
+                        };
+                        await databases.createDocument(
+                            'default', // Database ID
+                            '67ee04300014f5069e03', // Collection ID
+                            user.$id, // Document ID
+                            userData
+                        );
+                    }
+
+                    // Store userData in localStorage
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    window.location.href = 'home.html';
+                }
+            } catch (error) {
+                console.log('No active session or failed to fetch user:', error);
+                // Stay on login page if no session
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
