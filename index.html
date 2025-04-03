@@ -52,192 +52,161 @@
             margin-top: 20px;
             display: none;
         }
-        #recaptcha-container {
-            margin: 10px 0;
-        }
     </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
-    <!-- reCAPTCHA -->
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <!-- Appwrite SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.umd.min.js"></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <input type="tel" id="phoneInput" class="login-input" placeholder="+12025550123">
-        <div id="recaptcha-container"></div>
-        <button id="sign-in-button" class="login-btn" onclick="requestOTP()">Send OTP</button>
-        <input type="text" id="otpInput" class="login-input" placeholder="Enter OTP" style="display: none;">
-        <button id="verify-button" class="login-btn" onclick="verifyOTP()" style="display: none;">Verify OTP</button>
+        <input type="email" id="emailInput" class="login-input" placeholder="Email">
+        <input type="password" id="passwordInput" class="login-input" placeholder="Password">
+        <button class="login-btn" onclick="login()">Login</button>
+        <button class="login-btn" onclick="register()">Register</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
 
     <script>
-        // Firebase configuration and initialization
-        const firebaseConfig = {
-            apiKey: "AIzaSyDpNTyUP3B6JFnWZ6bByIe1Qj_AcLG_or0",
-            authDomain: "xchit-7d57a.firebaseapp.com",
-            projectId: "xchit-7d57a",
-            storageBucket: "xchit-7d57a.firebasestorage.app",
-            messagingSenderId: "1052972946536",
-            appId: "1:1052972946536:web:e94787cedfc67edf7157dd",
-            measurementId: "G-NQS3TXQ3RT"
+        const { Client, Account, Databases } = Appwrite;
+
+        // Initialize Appwrite client
+        const client = new Client();
+        client
+            .setEndpoint('https://cloud.appwrite.io/v1') // Default Appwrite endpoint
+            .setProject('67ed2822002be4a5e417'); // Your project ID
+
+        const account = new Account(client);
+        const databases = new Databases(client);
+
+        // Collection IDs
+        const COLLECTIONS = {
+            number: '67ee04300014f5069e03',
+            email: '67ed4d020023e9d65431',
+            username: '67ed4ccc003aeb32a47b',
+            name: '67ed4c9400230d389eba',
+            picture: '67ed2a2000013d191949'
         };
 
-        try {
-            const app = firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth();
-            const db = firebase.firestore();
-            console.log("Firebase initialized successfully");
-            alert("Firebase initialized successfully");
+        function login() {
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
 
-            // Set language code
-            auth.languageCode = 'en';
+            if (!email || !password) {
+                showError("Please enter both email and password");
+                return;
+            }
 
-            // Initialize reCAPTCHA verifier
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('sign-in-button', {
-                'size': 'invisible',
-                'callback': (response) => {
-                    console.log("reCAPTCHA solved:", response);
-                    // Do not call requestOTP here; it’s triggered manually
-                },
-                'expired-callback': () => {
-                    console.log("reCAPTCHA expired");
-                    showError("reCAPTCHA expired, please try again.");
-                    resetRecaptcha();
-                },
-                'error-callback': (error) => {
-                    console.error("reCAPTCHA error:", error);
-                    showError("reCAPTCHA failed: " + error.message);
-                    resetRecaptcha();
-                }
-            });
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
 
-            // Render reCAPTCHA on page load
-            window.recaptchaVerifier.render().then((widgetId) => {
-                console.log("reCAPTCHA rendered, widget ID:", widgetId);
-                window.recaptchaWidgetId = widgetId;
-                alert("reCAPTCHA loaded successfully");
-            }).catch((error) => {
-                console.error("reCAPTCHA render failed:", error);
-                showError("Failed to load reCAPTCHA: " + error.message);
-                alert("reCAPTCHA failed to load: " + error.message);
-            });
+            account.createEmailPasswordSession(email, password)
+                .then((session) => {
+                    console.log("Login successful:", session);
+                    return account.get();
+                })
+                .then((user) => {
+                    console.log("User data:", user);
+                    const userData = {
+                        id: user.$id,
+                        name: user.name || 'User',
+                        email: user.email,
+                        image: 'defaultdp.png' // Default picture
+                    };
 
-            function requestOTP() {
-                console.log("requestOTP function called");
-                alert("Send OTP button clicked");
+                    // Fetch or set user data in collections
+                    return Promise.all([
+                        databases.listDocuments('default', COLLECTIONS.name, [`equal("userId", "${user.$id}")`]),
+                        databases.listDocuments('default', COLLECTIONS.email, [`equal("userId", "${user.$id}")`]),
+                        databases.listDocuments('default', COLLECTIONS.username, [`equal("userId", "${user.$id}")`]),
+                        databases.listDocuments('default', COLLECTIONS.picture, [`equal("userId", "${user.$id}")`])
+                    ]).then(([nameDocs, emailDocs, usernameDocs, pictureDocs]) => {
+                        userData.name = nameDocs.documents[0]?.name || userData.name;
+                        userData.email = emailDocs.documents[0]?.email || userData.email;
+                        userData.username = usernameDocs.documents[0]?.username || userData.email.split('@')[0];
+                        userData.customDP = pictureDocs.documents[0]?.url || userData.image;
 
-                const phoneNumber = document.getElementById('phoneInput').value.trim();
-                if (!phoneNumber || !/^\+\d{10,15}$/.test(phoneNumber)) {
-                    showError("Please enter a valid phone number (e.g., +12025550123)");
-                    alert("Invalid phone number format");
-                    return;
-                }
+                        // If no data exists, create it
+                        if (!nameDocs.documents.length) {
+                            databases.createDocument('default', COLLECTIONS.name, 'unique()', { userId: user.$id, name: userData.name });
+                        }
+                        if (!emailDocs.documents.length) {
+                            databases.createDocument('default', COLLECTIONS.email, 'unique()', { userId: user.$id, email: userData.email });
+                        }
+                        if (!usernameDocs.documents.length) {
+                            databases.createDocument('default', COLLECTIONS.username, 'unique()', { userId: user.$id, username: userData.username });
+                        }
+                        if (!pictureDocs.documents.length) {
+                            databases.createDocument('default', COLLECTIONS.picture, 'unique()', { userId: user.$id, url: userData.customDP });
+                        }
 
-                console.log("Requesting OTP for:", phoneNumber);
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
-
-                const appVerifier = window.recaptchaVerifier;
-                auth.signInWithPhoneNumber(phoneNumber, appVerifier)
-                    .then((confirmationResult) => {
-                        console.log("OTP sent successfully:", confirmationResult.verificationId);
-                        alert("OTP sent to " + phoneNumber);
-                        window.confirmationResult = confirmationResult;
-                        document.getElementById('loading').style.display = 'none';
-                        document.getElementById('phoneInput').style.display = 'none';
-                        document.getElementById('sign-in-button').style.display = 'none';
-                        document.getElementById('otpInput').style.display = 'block';
-                        document.getElementById('verify-button').style.display = 'block';
-                    })
-                    .catch((error) => {
-                        console.error("Error sending OTP:", error.code, error.message);
-                        showError("Failed to send OTP: " + error.message);
-                        alert("Failed to send OTP: " + error.message);
-                        document.getElementById('loading').style.display = 'none';
-                        resetRecaptcha();
+                        return userData;
                     });
+                })
+                .then((userData) => {
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    window.location.href = 'home.html';
+                })
+                .catch((error) => {
+                    console.error("Login failed:", error);
+                    showError("Login failed: " + error.message);
+                })
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+
+        function register() {
+            const email = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+
+            if (!email || !password) {
+                showError("Please enter both email and password");
+                return;
             }
 
-            function verifyOTP() {
-                console.log("verifyOTP function called");
-                alert("Verify OTP button clicked");
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
 
-                const code = document.getElementById('otpInput').value.trim();
-                if (!code || code.length !== 6) {
-                    showError("Please enter a valid 6-digit OTP");
-                    alert("Invalid OTP format");
-                    return;
-                }
+            account.create('unique()', email, password)
+                .then((user) => {
+                    console.log("Registration successful:", user);
+                    const userData = {
+                        id: user.$id,
+                        name: 'User',
+                        email: user.email,
+                        image: 'defaultdp.png'
+                    };
 
-                console.log("Verifying OTP:", code);
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
+                    // Create initial user data in collections
+                    return Promise.all([
+                        databases.createDocument('default', COLLECTIONS.name, 'unique()', { userId: user.$id, name: userData.name }),
+                        databases.createDocument('default', COLLECTIONS.email, 'unique()', { userId: user.$id, email: userData.email }),
+                        databases.createDocument('default', COLLECTIONS.username, 'unique()', { userId: user.$id, username: userData.email.split('@')[0] }),
+                        databases.createDocument('default', COLLECTIONS.picture, 'unique()', { userId: user.$id, url: userData.image })
+                    ]).then(() => userData);
+                })
+                .then((userData) => {
+                    return account.createEmailPasswordSession(email, password).then(() => userData);
+                })
+                .then((userData) => {
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    window.location.href = 'home.html';
+                })
+                .catch((error) => {
+                    console.error("Registration failed:", error);
+                    showError("Registration failed: " + error.message);
+                })
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
 
-                window.confirmationResult.confirm(code)
-                    .then((result) => {
-                        console.log("Phone number verified:", result.user.uid);
-                        alert("Phone number verified successfully");
-                        const user = result.user;
-                        const userData = {
-                            id: user.uid,
-                            name: 'User',
-                            email: '',
-                            phoneNumber: user.phoneNumber,
-                            image: 'defaultdp.png',
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        };
-
-                        return db.collection('users').doc(userData.id).get()
-                            .then((doc) => {
-                                if (doc.exists) {
-                                    console.log("User data exists in Firestore:", doc.data());
-                                    const existingData = doc.data();
-                                    userData.customDP = existingData.customDP || null;
-                                    userData.customUsername = existingData.customUsername || null;
-                                    userData.name = existingData.name || userData.name;
-                                } else {
-                                    console.log("No existing user data in Firestore");
-                                }
-                                return db.collection('users').doc(userData.id).set(userData, { merge: true });
-                            });
-                    })
-                    .then(() => {
-                        console.log("User data saved to Firestore");
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        window.location.href = 'home.html';
-                    })
-                    .catch((error) => {
-                        console.error("Error verifying OTP:", error.code, error.message);
-                        showError("Failed to verify OTP: " + error.message);
-                        alert("Failed to verify OTP: " + error.message);
-                        document.getElementById('loading').style.display = 'none';
-                    });
-            }
-
-            function resetRecaptcha() {
-                if (window.recaptchaWidgetId !== undefined) {
-                    grecaptcha.reset(window.recaptchaWidgetId);
-                    console.log("reCAPTCHA reset");
-                }
-            }
-
-            function showError(message) {
-                const errorDiv = document.getElementById('error');
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            }
-
-        } catch (error) {
-            console.error("Firebase initialization failed:", error);
-            showError("Firebase initialization failed: " + error.message);
-            alert("Firebase initialization failed: " + error.message);
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a5489ade8732ef',t:'MTc0MzY0ODg5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
