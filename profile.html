@@ -56,11 +56,9 @@
             margin-right: 5px;
         }
         #usernameInput {
-            width: 180px;
+            width: 180px; /* Adjusted to account for prefix */
         }
     </style>
-    <!-- Appwrite SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.umd.min.js"></script>
 </head>
 <body>
     <div class="profile-container">
@@ -80,97 +78,99 @@
             <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
         </div>
         <p id="userEmail"></p>
-        <button class="logout-btn" onclick="logout()">Logout</button>
+        <button class="logout-btn" onclick="signOut()">Logout</button>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
     <script>
-        const { Client, Account, Databases } = Appwrite;
+        const { Client, Databases } = Appwrite;
 
         const client = new Client();
-        client
-            .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject('67ed2822002be4a5e417');
+        client.setEndpoint('https://cloud.appwrite.io/v1')
+              .setProject('67ed2822002be4a5e417');
 
-        const account = new Account(client);
         const databases = new Databases(client);
+        const emailCollectionId = '67ed4d020023e9d65431';
+        const usernameCollectionId = '67ed4ccc003aeb32a47b';
+        const nameCollectionId = '67ed4c9400230d389eba';
+        const pictureCollectionId = '67ed2a2000013d191949';
+        const defaultDP = 'defaultdp.png'; // Path to your default DP image
 
-        const COLLECTIONS = {
-            number: '67ee04300014f5069e03',
-            email: '67ed4d020023e9d65431',
-            username: '67ed4ccc003aeb32a47b',
-            name: '67ed4c9400230d389eba',
-            picture: '67ed2a2000013d191949'
-        };
-
-        const defaultDP = 'defaultdp.png';
-
-        window.onload = function() {
+        // Load user data from Appwrite on page load
+        window.onload = async function() {
             const userData = JSON.parse(localStorage.getItem('userData'));
-            if (!userData) {
-                console.log("No user data, redirecting to index.html");
-                window.location.href = 'index.html';
-                return;
+            if (userData) {
+                try {
+                    // Fetch profile data from Appwrite collections
+                    const usernameDocList = await databases.listDocuments(usernameCollectionId, [`userId = "${userData.id}"`]);
+                    const nameDocList = await databases.listDocuments(nameCollectionId, [`userId = "${userData.id}"`]);
+                    const pictureDocList = await databases.listDocuments(pictureCollectionId, [`userId = "${userData.id}"`]);
+
+                    const username = usernameDocList.documents[0]?.username;
+                    const name = nameDocList.documents[0]?.name;
+                    const picture = pictureDocList.documents[0]?.url || userData.image || defaultDP;
+
+                    document.getElementById('profilePic').src = picture;
+                    document.getElementById('userName').textContent = name;
+                    document.getElementById('userUsername').textContent = '@' + username;
+                    document.getElementById('userEmail').textContent = userData.email;
+
+                    // Store fetched data for later use if needed
+                    userData.username = username;
+                    userData.name = name;
+                    userData.picture = picture;
+                    localStorage.setItem('userData', JSON.stringify(userData));
+
+                } catch (error) {
+                    console.error("Error fetching profile data from Appwrite:", error);
+                    // Handle error (e.g., show a message to the user)
+                }
+            } else {
+                window.location.href = 'index.html'; // Redirect to login if no user data
             }
-
-            account.get()
-                .then((user) => {
-                    console.log("Session valid:", user);
-                    if (user.$id !== userData.id) {
-                        console.log("User ID mismatch, redirecting to index.html");
-                        window.location.href = 'index.html';
-                        return;
-                    }
-
-                    Promise.all([
-                        databases.listDocuments('default', COLLECTIONS.name, [`equal("userId", "${user.$id}")`]),
-                        databases.listDocuments('default', COLLECTIONS.email, [`equal("userId", "${user.$id}")`]),
-                        databases.listDocuments('default', COLLECTIONS.username, [`equal("userId", "${user.$id}")`]),
-                        databases.listDocuments('default', COLLECTIONS.picture, [`equal("userId", "${user.$id}")`])
-                    ]).then(([nameDocs, emailDocs, usernameDocs, pictureDocs]) => {
-                        userData.name = nameDocs.documents[0]?.name || userData.name;
-                        userData.email = emailDocs.documents[0]?.email || userData.email;
-                        userData.username = usernameDocs.documents[0]?.username || userData.username;
-                        userData.customDP = pictureDocs.documents[0]?.url || userData.image;
-
-                        localStorage.setItem('userData', JSON.stringify(userData));
-                        document.getElementById('profilePic').src = userData.customDP;
-                        document.getElementById('userName').textContent = userData.name;
-                        document.getElementById('userEmail').textContent = userData.email;
-                        document.getElementById('userUsername').textContent = '@' + userData.username;
-                    }).catch((error) => {
-                        console.error("Error fetching user data:", error);
-                    });
-                })
-                .catch((error) => {
-                    console.error("Session invalid:", error);
-                    localStorage.removeItem('userData');
-                    window.location.href = 'index.html';
-                });
-        };
+        }
 
         function changeDP() {
             document.getElementById('dpInput').click();
         }
 
-        function uploadDP(event) {
+        async function uploadDP(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customDP = e.target.result;
-                    updateUserData(userData, COLLECTIONS.picture, { url: userData.customDP });
-                    document.getElementById('profilePic').src = userData.customDP;
+                reader.onload = async function(e) {
+                    try {
+                        const userData = JSON.parse(localStorage.getItem('userData'));
+                        const pictureDocList = await databases.listDocuments(pictureCollectionId, [`userId = "${userData.id}"`]);
+                        let pictureId = pictureDocList.documents[0]?.$id;
+
+                        if (pictureId) {
+                            await databases.updateDocument(pictureCollectionId, pictureId, { url: e.target.result });
+                        } else {
+                            await databases.createDocument(pictureCollectionId, { userId: userData.id, url: e.target.result });
+                        }
+                        document.getElementById('profilePic').src = e.target.result;
+                    } catch (error) {
+                        console.error("Error updating DP in Appwrite:", error);
+                    }
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        function removeDP() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            userData.customDP = defaultDP;
-            updateUserData(userData, COLLECTIONS.picture, { url: userData.customDP });
-            document.getElementById('profilePic').src = userData.customDP;
+        async function removeDP() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('userData'));
+                const pictureDocList = await databases.listDocuments(pictureCollectionId, [`userId = "${userData.id}"`]);
+                const pictureId = pictureDocList.documents[0]?.$id;
+
+                if (pictureId) {
+                    await databases.deleteDocument(pictureCollectionId, pictureId);
+                }
+                document.getElementById('profilePic').src = defaultDP;
+            } catch (error) {
+                console.error("Error removing DP in Appwrite:", error);
+            }
         }
 
         function toggleEditName() {
@@ -182,15 +182,25 @@
             }
         }
 
-        function updateName(event) {
+        async function updateName(event) {
             if (event.key === 'Enter') {
                 const newName = event.target.value.trim();
                 if (newName) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.name = newName;
-                    updateUserData(userData, COLLECTIONS.name, { name: newName });
-                    document.getElementById('userName').textContent = newName;
-                    event.target.style.display = 'none';
+                    try {
+                        const userData = JSON.parse(localStorage.getItem('userData'));
+                        const nameDocList = await databases.listDocuments(nameCollectionId, [`userId = "${userData.id}"`]);
+                        let nameId = nameDocList.documents[0]?.$id;
+
+                        if (nameId) {
+                            await databases.updateDocument(nameCollectionId, nameId, { name: newName });
+                        } else {
+                            await databases.createDocument(nameCollectionId, { userId: userData.id, name: newName });
+                        }
+                        document.getElementById('userName').textContent = newName;
+                        event.target.style.display = 'none';
+                    } catch (error) {
+                        console.error("Error updating name in Appwrite:", error);
+                    }
                 }
             }
         }
@@ -200,55 +210,47 @@
             usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
             if (usernameInput.style.display === 'block') {
                 usernameInput.focus();
-                const currentUsername = document.getElementById('userUsername').textContent.slice(1);
+                const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove @
                 usernameInput.value = currentUsername;
             }
         }
 
-        function updateUsername(event) {
+        async function updateUsername(event) {
             if (event.key === 'Enter') {
                 const newUsername = event.target.value.trim();
                 if (newUsername) {
-                    const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.username = newUsername;
-                    updateUserData(userData, COLLECTIONS.username, { username: newUsername });
-                    document.getElementById('userUsername').textContent = '@' + newUsername;
-                    event.target.style.display = 'none';
+                    try {
+                        const userData = JSON.parse(localStorage.getItem('userData'));
+                        const usernameDocList = await databases.listDocuments(usernameCollectionId, [`userId = "${userData.id}"`]);
+                        let usernameId = usernameDocList.documents[0]?.$id;
+
+                        if (usernameId) {
+                            await databases.updateDocument(usernameCollectionId, usernameId, { username: newUsername });
+                        } else {
+                            await databases.createDocument(usernameCollectionId, { userId: userData.id, username: newUsername });
+                        }
+                        document.getElementById('userUsername').textContent = '@' + newUsername;
+                        event.target.style.display = 'none';
+                    } catch (error) {
+                        console.error("Error updating username in Appwrite:", error);
+                    }
                 } else {
                     alert('Username cannot be empty');
                 }
             }
         }
 
-        function updateUserData(userData, collectionId, data) {
-            databases.listDocuments('default', collectionId, [`equal("userId", "${userData.id}")`])
-                .then((response) => {
-                    if (response.documents.length > 0) {
-                        const docId = response.documents[0].$id;
-                        return databases.updateDocument('default', collectionId, docId, data);
-                    } else {
-                        return databases.createDocument('default', collectionId, 'unique()', { userId: userData.id, ...data });
-                    }
-                })
-                .then(() => {
-                    console.log("User data updated in collection:", collectionId);
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                })
-                .catch((error) => {
-                    console.error("Error updating user data:", error);
-                });
-        }
-
-        function logout() {
-            account.deleteSession('current')
-                .then(() => {
-                    console.log("Logout successful");
-                    localStorage.removeItem('userData');
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    console.error("Logout failed:", error);
-                });
+        async function signOut() {
+            try {
+                const { Account } = Appwrite;
+                const account = new Account(client);
+                await account.deleteSession('current'); // Or delete all sessions
+                localStorage.removeItem('userData'); // Clear local data
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error("Error signing out:", error);
+                // Handle sign-out error
+            }
         }
     </script>
 </body>
