@@ -59,7 +59,7 @@
             width: 180px;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/index.umd.min.js"></script>
 </head>
 <body>
     <div class="profile-container">
@@ -83,7 +83,7 @@
     </div>
 
     <script>
-        const { Client, Account, Databases } = Appwrite;
+        const { Client, Account, Databases, ID } = Appwrite;
         const client = new Client()
             .setEndpoint('https://cloud.appwrite.io/v1')
             .setProject('67ed2822002be4a5e417');
@@ -108,23 +108,24 @@
                 try {
                     nameDoc = await databases.getDocument(databaseId, nameCollectionId, user.$id);
                 } catch (e) {
-                    nameDoc = await databases.createDocument(databaseId, nameCollectionId, user.$id, { name: user.name });
+                    nameDoc = await databases.createDocument(databaseId, nameCollectionId, user.$id, { name: user.name }, ['role:user'], ['role:user']);
                 }
                 try {
                     usernameDoc = await databases.getDocument(databaseId, usernameCollectionId, user.$id);
                 } catch (e) {
-                    usernameDoc = await databases.createDocument(databaseId, usernameCollectionId, user.$id, { username: user.email.split('@')[0] });
+                    usernameDoc = await databases.createDocument(databaseId, usernameCollectionId, user.$id, { username: user.email.split('@')[0] }, ['role:user'], ['role:user']);
                 }
                 try {
                     pictureDoc = await databases.getDocument(databaseId, pictureCollectionId, user.$id);
                 } catch (e) {
-                    pictureDoc = await databases.createDocument(databaseId, pictureCollectionId, user.$id, { picture: defaultDP });
+                    pictureDoc = await databases.createDocument(databaseId, pictureCollectionId, user.$id, { picture: defaultDP }, ['role:user'], ['role:user']);
                 }
 
                 document.getElementById('userName').textContent = nameDoc.name;
                 document.getElementById('userUsername').textContent = '@' + usernameDoc.username;
                 document.getElementById('profilePic').src = pictureDoc.picture;
             } catch (error) {
+                console.error('Profile page error:', error);
                 window.location.href = 'index.html';
             }
         };
@@ -168,7 +169,7 @@
                     const user = await account.get();
                     await databases.updateDocument(databaseId, nameCollectionId, user.$id, { name: newName });
                     document.getElementById('userName').textContent = newName;
-                    event.target.style.display = 'nowne';
+                    event.target.style.display = 'none';
                 }
             }
         }
