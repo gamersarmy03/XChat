@@ -88,6 +88,7 @@
                     `${window.location.origin}/home.html` // Redirect URL after magic link verification
                 );
                 alert('Magic link sent! Check your email.');
+                document.getElementById('emailInput').value = ''; // Clear input
             } catch (error) {
                 showError('Failed to send magic link: ' + error.message);
             } finally {
