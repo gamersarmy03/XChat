@@ -4,26 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
-    <script>
-        const client = new Appwrite.Client();
-        client.setEndpoint('https://cloud.appwrite.io/v1').setProject('67ed2822002be4a5e417');
-        const account = new Appwrite.Account(client);
-
-        async function login() {
-            const email = prompt("Enter your email for login:");
-            if (email) {
-                try {
-                    await account.createMagicURLSession("unique_id", email);
-                    alert("Check your email for the login link.");
-                } catch (error) {
-                    console.error("Login error:", error);
-                }
-            }
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
         }
-    </script>
+        .login-container {
+            text-align: center;
+        }
+        .logo {
+            max-width: 200px;
+            margin-bottom: 20px;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        .error {
+            color: #ff4444;
+            margin-top: 20px;
+            display: none;
+        }
+        input {
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            margin: 10px 0;
+            width: 200px;
+        }
+        button {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #cccccc;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
-    <button onclick="login()">Login with Magic Link</button>
+    <div class="login-container">
+        <img src="logo.png" alt="Logo" class="logo">
+        <input type="email" id="emailInput" placeholder="Enter your email">
+        <button onclick="sendMagicLink()">Login with Magic Link</button>
+        <div class="loading" id="loading">Sending...</div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <script>
+        const { Client, Account } = Appwrite;
+        const client = new Client()
+            .setEndpoint('https://cloud.appwrite.io/v1') // Your Appwrite endpoint
+            .setProject('67ed2822002be4a5e417'); // Your project ID
+
+        const account = new Account(client);
+
+        async function sendMagicLink() {
+            const email = document.getElementById('emailInput').value.trim();
+            if (!email) {
+                showError('Please enter an email');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                await account.createMagicURLSession(
+                    'unique()', // User ID (auto-generated if 'unique()')
+                    email,
+                    `${window.location.origin}/home.html` // Redirect URL after magic link verification
+                );
+                alert('Magic link sent! Check your email.');
+            } catch (error) {
+                showError('Failed to send magic link: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
