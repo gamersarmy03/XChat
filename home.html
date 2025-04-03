@@ -71,7 +71,6 @@
             align-items: center;
         }
     </style>
-    <!-- Load Appwrite SDK -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.min.js"></script>
 </head>
 <body>
@@ -79,7 +78,6 @@
         <div class="hamburger" onclick="toggleMenu()">☰</div>
         <div class="menu" id="menu">
             <a href="profile.html">Profile</a>
-            <!-- Add more menu options here if needed -->
         </div>
         <div class="search-container">
             <svg class="search-icon" onclick="toggleSearch()" viewBox="0 0 24 24">
@@ -95,38 +93,32 @@
     <script>
         const { Client, Account, Databases } = Appwrite;
         const client = new Client()
-            .setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
-            .setProject('67ed2822002be4a5e417'); // Your Project ID
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('67ed2822002be4a5e417');
         const account = new Account(client);
         const databases = new Databases(client);
 
-        // Load user data on page load
         window.onload = async function() {
-            let userData = JSON.parse(localStorage.getItem('userData'));
-            if (!userData) {
-                window.location.href = 'index.html'; // Redirect to login if no user data
-                return;
-            }
-
             try {
-                // Verify session and fetch latest user data from Appwrite
+                const userData = JSON.parse(localStorage.getItem('userData'));
+                if (!userData) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Verify session and sync data
                 await account.get(); // Check if session is active
-                const updatedUserData = await databases.getDocument(
-                    'default', // Database ID (replace if different)
-                    '67ee04300014f5069e03', // Collection ID
+                const syncedData = await databases.getDocument(
+                    '67ee04300014f5069e03',
+                    'users',
                     userData.userId
                 );
-
-                // Update localStorage with the latest data
-                localStorage.setItem('userData', JSON.stringify(updatedUserData));
+                localStorage.setItem('userData', JSON.stringify(syncedData));
             } catch (error) {
-                console.error('Session invalid or failed to fetch user data:', error);
-                window.location.href = 'index.html'; // Redirect to login if session is invalid
+                localStorage.removeItem('userData');
+                window.location.href = 'index.html';
             }
-
-            // For now, show "Welcome to XChit"
-            // Add chat fetching logic here later if needed
-        }
+        };
 
         function toggleMenu() {
             const menu = document.getElementById('menu');
@@ -147,7 +139,6 @@
             const query = event.target.value.trim();
             if (event.key === 'Enter' && query) {
                 console.log('Searching for:', query);
-                // Add search logic here (e.g., query Appwrite for users/chats)
                 event.target.value = '';
                 toggleSearch();
             }
