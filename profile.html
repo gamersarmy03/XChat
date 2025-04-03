@@ -59,10 +59,8 @@
             width: 180px;
         }
     </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+    <!-- Appwrite SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.umd.min.js"></script>
 </head>
 <body>
     <div class="profile-container">
@@ -81,63 +79,73 @@
             <span class="username-prefix">@</span>
             <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
         </div>
-        <p id="userPhone"></p>
-        <button class="logout-btn" onclick="signOut()">Logout</button>
+        <p id="userEmail"></p>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
     <script>
-        // Firebase configuration and initialization
-        const firebaseConfig = {
-            apiKey: "AIzaSyDpNTyUP3B6JFnWZ6bByIe1Qj_AcLG_or0",
-            authDomain: "xchit-7d57a.firebaseapp.com",
-            projectId: "xchit-7d57a",
-            storageBucket: "xchit-7d57a.firebasestorage.app",
-            messagingSenderId: "1052972946536",
-            appId: "1:1052972946536:web:e94787cedfc67edf7157dd",
-            measurementId: "G-NQS3TXQ3RT"
+        const { Client, Account, Databases } = Appwrite;
+
+        const client = new Client();
+        client
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('67ed2822002be4a5e417');
+
+        const account = new Account(client);
+        const databases = new Databases(client);
+
+        const COLLECTIONS = {
+            number: '67ee04300014f5069e03',
+            email: '67ed4d020023e9d65431',
+            username: '67ed4ccc003aeb32a47b',
+            name: '67ed4c9400230d389eba',
+            picture: '67ed2a2000013d191949'
         };
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
 
         const defaultDP = 'defaultdp.png';
 
         window.onload = function() {
-            console.log("Profile page loaded");
-            auth.onAuthStateChanged((user) => {
-                if (!user) {
-                    console.log("No user signed in, redirecting to index.html");
-                    window.location.href = 'index.html';
-                    return;
-                }
-                console.log("User signed in:", user.uid);
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            if (!userData) {
+                console.log("No user data, redirecting to index.html");
+                window.location.href = 'index.html';
+                return;
+            }
 
-                const userData = JSON.parse(localStorage.getItem('userData'));
-                if (!userData || userData.id !== user.uid) {
-                    console.log("User data mismatch or missing, redirecting to index.html");
-                    window.location.href = 'index.html';
-                    return;
-                }
-
-                db.collection('users').doc(userData.id).get().then((doc) => {
-                    if (doc.exists) {
-                        console.log("Fetched user data from Firestore:", doc.data());
-                        const updatedUserData = doc.data();
-                        localStorage.setItem('userData', JSON.stringify(updatedUserData));
-                        document.getElementById('profilePic').src = updatedUserData.customDP || updatedUserData.image || defaultDP;
-                        document.getElementById('userName').textContent = updatedUserData.name;
-                        document.getElementById('userPhone').textContent = updatedUserData.phoneNumber;
-                        const username = updatedUserData.customUsername || updatedUserData.phoneNumber.replace('+', '');
-                        document.getElementById('userUsername').textContent = '@' + username;
-                    } else {
-                        console.log("No user data in Firestore, redirecting to index.html");
+            account.get()
+                .then((user) => {
+                    console.log("Session valid:", user);
+                    if (user.$id !== userData.id) {
+                        console.log("User ID mismatch, redirecting to index.html");
                         window.location.href = 'index.html';
+                        return;
                     }
-                }).catch((error) => {
-                    console.error("Error fetching user data:", error);
+
+                    Promise.all([
+                        databases.listDocuments('default', COLLECTIONS.name, [`equal("userId", "${user.$id}")`]),
+                        databases.listDocuments('default', COLLECTIONS.email, [`equal("userId", "${user.$id}")`]),
+                        databases.listDocuments('default', COLLECTIONS.username, [`equal("userId", "${user.$id}")`]),
+                        databases.listDocuments('default', COLLECTIONS.picture, [`equal("userId", "${user.$id}")`])
+                    ]).then(([nameDocs, emailDocs, usernameDocs, pictureDocs]) => {
+                        userData.name = nameDocs.documents[0]?.name || userData.name;
+                        userData.email = emailDocs.documents[0]?.email || userData.email;
+                        userData.username = usernameDocs.documents[0]?.username || userData.username;
+                        userData.customDP = pictureDocs.documents[0]?.url || userData.image;
+
+                        localStorage.setItem('userData', JSON.stringify(userData));
+                        document.getElementById('profilePic').src = userData.customDP;
+                        document.getElementById('userName').textContent = userData.name;
+                        document.getElementById('userEmail').textContent = userData.email;
+                        document.getElementById('userUsername').textContent = '@' + userData.username;
+                    }).catch((error) => {
+                        console.error("Error fetching user data:", error);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Session invalid:", error);
+                    localStorage.removeItem('userData');
                     window.location.href = 'index.html';
                 });
-            });
         };
 
         function changeDP() {
@@ -151,7 +159,7 @@
                 reader.onload = function(e) {
                     const userData = JSON.parse(localStorage.getItem('userData'));
                     userData.customDP = e.target.result;
-                    updateFirestore(userData, { customDP: e.target.result });
+                    updateUserData(userData, COLLECTIONS.picture, { url: userData.customDP });
                     document.getElementById('profilePic').src = userData.customDP;
                 };
                 reader.readAsDataURL(file);
@@ -160,9 +168,9 @@
 
         function removeDP() {
             const userData = JSON.parse(localStorage.getItem('userData'));
-            delete userData.customDP;
-            updateFirestore(userData, { customDP: null });
-            document.getElementById('profilePic').src = userData.image || defaultDP;
+            userData.customDP = defaultDP;
+            updateUserData(userData, COLLECTIONS.picture, { url: userData.customDP });
+            document.getElementById('profilePic').src = userData.customDP;
         }
 
         function toggleEditName() {
@@ -180,7 +188,7 @@
                 if (newName) {
                     const userData = JSON.parse(localStorage.getItem('userData'));
                     userData.name = newName;
-                    updateFirestore(userData, { name: newName });
+                    updateUserData(userData, COLLECTIONS.name, { name: newName });
                     document.getElementById('userName').textContent = newName;
                     event.target.style.display = 'none';
                 }
@@ -202,8 +210,8 @@
                 const newUsername = event.target.value.trim();
                 if (newUsername) {
                     const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customUsername = newUsername;
-                    updateFirestore(userData, { customUsername: newUsername });
+                    userData.username = newUsername;
+                    updateUserData(userData, COLLECTIONS.username, { username: newUsername });
                     document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
                 } else {
@@ -212,30 +220,36 @@
             }
         }
 
-        function updateFirestore(userData, updates) {
-            console.log("Updating Firestore with:", updates);
-            db.collection('users').doc(userData.id).update({
-                ...updates,
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                console.log("Firestore update successful");
-                localStorage.setItem('userData', JSON.stringify(userData));
-            }).catch((error) => {
-                console.error("Error updating Firestore:", error);
-            });
+        function updateUserData(userData, collectionId, data) {
+            databases.listDocuments('default', collectionId, [`equal("userId", "${userData.id}")`])
+                .then((response) => {
+                    if (response.documents.length > 0) {
+                        const docId = response.documents[0].$id;
+                        return databases.updateDocument('default', collectionId, docId, data);
+                    } else {
+                        return databases.createDocument('default', collectionId, 'unique()', { userId: userData.id, ...data });
+                    }
+                })
+                .then(() => {
+                    console.log("User data updated in collection:", collectionId);
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                })
+                .catch((error) => {
+                    console.error("Error updating user data:", error);
+                });
         }
 
-        function signOut() {
-            console.log("Signing out");
-            auth.signOut().then(() => {
-                console.log("Sign out successful");
-                localStorage.removeItem('userData');
-                window.location.href = 'index.html';
-            }).catch((error) => {
-                console.error("Sign out failed:", error);
-            });
+        function logout() {
+            account.deleteSession('current')
+                .then(() => {
+                    console.log("Logout successful");
+                    localStorage.removeItem('userData');
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    console.error("Logout failed:", error);
+                });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a5489abb7806ec',t:'MTc0MzY0ODg5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
