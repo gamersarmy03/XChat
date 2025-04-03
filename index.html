@@ -4,78 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    </head>
-<body>
-    <div class="login-container">
-        <img src="logo.png" alt="Logo" class="logo">
-        <div>
-            <input type="email" id="emailInput" placeholder="Enter your email">
-            <button onclick="sendMagicLink()">Send Magic Link</button>
-        </div>
-        <div class="loading" id="loading">Loading...</div>
-        <div class="error" id="error"></div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
     <script>
-        const { Client, Account } = Appwrite;
+        const client = new Appwrite.Client();
+        client.setEndpoint('https://cloud.appwrite.io/v1').setProject('67ed2822002be4a5e417');
+        const account = new Appwrite.Account(client);
 
-        const client = new Client();
-        client.setEndpoint('https://cloud.appwrite.io/v1')
-              .setProject('67ed2822002be4a5e417');
-
-        const account = new Account(client);
-
-        async function sendMagicLink() {
-            const email = document.getElementById('emailInput').value;
-            try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
-                await account.createMagicSession(email, window.location.href); // Redirect back to this page
-                alert('Magic link sent to your email. Please check your inbox.');
-            } catch (error) {
-                showError('Failed to send magic link: ' + error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+        async function login() {
+            const email = prompt("Enter your email for login:");
+            if (email) {
+                try {
+                    await account.createMagicURLSession("unique_id", email);
+                    alert("Check your email for the login link.");
+                } catch (error) {
+                    console.error("Login error:", error);
+                }
             }
-        }
-
-        // Handle magic link redirection (you'll need to adapt this based on your routing)
-        const params = new URLSearchParams(window.location.search);
-        const userId = params.get('userId');
-        const secret = params.get('secret');
-
-        if (userId && secret) {
-            confirmMagicLinkLogin(userId, secret);
-        }
-
-        async function confirmMagicLinkLogin(userId, secret) {
-            try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
-                await account.updateMagicSession(userId, secret);
-                // Fetch user data from Appwrite and store it
-                const user = await account.get();
-                // Fetch additional profile data from your collections
-                const userData = {
-                    id: user.$id,
-                    email: user.email
-                    // Fetch name, username, picture from collections
-                };
-                localStorage.setItem('userData', JSON.stringify(userData));
-                window.location.href = 'home.html';
-            } catch (error) {
-                showError('Magic link verification failed: ' + error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
         }
     </script>
+</head>
+<body>
+    <button onclick="login()">Login with Magic Link</button>
 </body>
 </html>
