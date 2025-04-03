@@ -56,7 +56,7 @@
             margin-right: 5px;
         }
         #usernameInput {
-            width: 180px; /* Adjusted to account for prefix */
+            width: 180px;
         }
     </style>
     <!-- Load Appwrite SDK -->
@@ -84,43 +84,45 @@
     </div>
 
     <script>
-        const { Client, Databases } = Appwrite;
+        const { Client, Account, Databases } = Appwrite;
         const client = new Client()
             .setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
             .setProject('67ed2822002be4a5e417'); // Your Project ID
+        const account = new Account(client);
         const databases = new Databases(client);
 
-        const defaultDP = 'defaultdp.png'; // Path to your default DP image
+        const defaultDP = 'defaultdp.png';
 
-        // Load user data on page load
         window.onload = async function() {
             let userData = JSON.parse(localStorage.getItem('userData'));
             if (!userData) {
-                window.location.href = 'index.html'; // Redirect to login if no user data
+                window.location.href = 'index.html';
                 return;
             }
 
             try {
-                // Fetch the latest user data from Appwrite
+                // Verify session and fetch latest user data from Appwrite
+                await account.get(); // Check if session is active
                 const updatedUserData = await databases.getDocument(
                     'default', // Database ID (replace if different)
                     '67ee04300014f5069e03', // Collection ID
                     userData.userId
                 );
 
-                // Update localStorage with the latest data from Appwrite
+                // Update localStorage with the latest data
                 localStorage.setItem('userData', JSON.stringify(updatedUserData));
                 userData = updatedUserData;
             } catch (error) {
-                console.error('Failed to fetch user data from Appwrite:', error);
-                // Proceed with local data if Appwrite fetch fails
+                console.error('Session invalid or failed to fetch user data:', error);
+                window.location.href = 'index.html';
+                return;
             }
 
             // Display user data
             document.getElementById('profilePic').src = userData.customDP || defaultDP;
             document.getElementById('userName').textContent = userData.name;
             document.getElementById('userEmail').textContent = userData.email;
-            const username = userData.customUsername || 'anonymous';
+            const username = userData.customUsername || userData.email.split('@')[0];
             document.getElementById('userUsername').textContent = '@' + username;
         }
 
@@ -218,9 +220,14 @@
             }
         }
 
-        function signOut() {
-            localStorage.removeItem('userData');
-            window.location.href = 'index.html';
+        async function signOut() {
+            try {
+                await account.deleteSession('current');
+                localStorage.removeItem('userData');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Logout failed:', error);
+            }
         }
     </script>
 </body>
