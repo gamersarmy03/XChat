@@ -97,32 +97,40 @@
             measurementId: "G-NQS3TXQ3RT"
         };
         const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.firestore();
 
         const defaultDP = 'defaultdp.png';
 
         window.onload = function() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            if (!userData) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            db.collection('users').doc(userData.id).get().then((doc) => {
-                if (doc.exists) {
-                    const updatedUserData = doc.data();
-                    localStorage.setItem('userData', JSON.stringify(updatedUserData));
-                    document.getElementById('profilePic').src = updatedUserData.customDP || updatedUserData.image || defaultDP;
-                    document.getElementById('userName').textContent = updatedUserData.name;
-                    document.getElementById('userEmail').textContent = updatedUserData.email;
-                    const username = updatedUserData.customUsername || updatedUserData.email.split('@')[0];
-                    document.getElementById('userUsername').textContent = '@' + username;
-                } else {
+            auth.onAuthStateChanged((user) => {
+                if (!user) {
                     window.location.href = 'index.html';
+                    return;
                 }
-            }).catch((error) => {
-                console.error('Error fetching user data:', error);
-                window.location.href = 'index.html';
+
+                const userData = JSON.parse(localStorage.getItem('userData'));
+                if (!userData || userData.id !== user.uid) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                db.collection('users').doc(userData.id).get().then((doc) => {
+                    if (doc.exists) {
+                        const updatedUserData = doc.data();
+                        localStorage.setItem('userData', JSON.stringify(updatedUserData));
+                        document.getElementById('profilePic').src = updatedUserData.customDP || updatedUserData.image || defaultDP;
+                        document.getElementById('userName').textContent = updatedUserData.name;
+                        document.getElementById('userEmail').textContent = updatedUserData.email;
+                        const username = updatedUserData.customUsername || updatedUserData.email.split('@')[0];
+                        document.getElementById('userUsername').textContent = '@' + username;
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                }).catch((error) => {
+                    console.error('Error fetching user data:', error);
+                    window.location.href = 'index.html';
+                });
             });
         };
 
@@ -185,12 +193,12 @@
 
         function updateUsername(event) {
             if (event.key === 'Enter') {
-                const newUsernameIt = event.target.value.trim();
-                if (newUsernameIt) {
+                const newUsername = event.target.value.trim();
+                if (newUsername) {
                     const userData = JSON.parse(localStorage.getItem('userData'));
-                    userData.customUsername = newUsernameIt;
-                    updateFirestore(userData, { customUsername: newUsernameIt });
-                    document.getElementById('userUsername').textContent = '@' + newUsernameIt;
+                    userData.customUsername = newUsername;
+                    updateFirestore(userData, { customUsername: newUsername });
+                    document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
                 } else {
                     alert('Username cannot be empty');
@@ -210,7 +218,12 @@
         }
 
         function signOut() {
-            window.location.href = 'index.html';
+            auth.signOut().then(() => {
+                localStorage.removeItem('userData');
+                window.location.href = 'index.html';
+            }).catch((error) => {
+                console.error('Sign out failed:', error);
+            });
         }
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a5489abb7806ec',t:'MTc0MzY0ODg5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
