@@ -56,9 +56,10 @@
             margin-right: 5px;
         }
         #usernameInput {
-            width: 180px; /* Adjusted to account for prefix */
+            width: 180px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="profile-container">
@@ -81,54 +82,52 @@
         <button class="logout-btn" onclick="signOut()">Logout</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
     <script>
-        const { Client, Databases } = Appwrite;
-
-        const client = new Client();
-        client.setEndpoint('https://cloud.appwrite.io/v1')
-              .setProject('67ed2822002be4a5e417');
-
+        const { Client, Account, Databases } = Appwrite;
+        const client = new Client()
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('67ed2822002be4a5e417');
+        const account = new Account(client);
         const databases = new Databases(client);
-        const emailCollectionId = '67ed4d020023e9d65431';
-        const usernameCollectionId = '67ed4ccc003aeb32a47b';
+
+        const defaultDP = 'defaultdp.png';
+        const databaseId = 'default'; // Replace with your actual database ID if different
         const nameCollectionId = '67ed4c9400230d389eba';
+        const usernameCollectionId = '67ed4ccc003aeb32a47b';
         const pictureCollectionId = '67ed2a2000013d191949';
-        const defaultDP = 'defaultdp.png'; // Path to your default DP image
 
-        // Load user data from Appwrite on page load
         window.onload = async function() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            if (userData) {
+            try {
+                const user = await account.get();
+                if (!user) throw new Error('No user logged in');
+
+                document.getElementById('userEmail').textContent = user.email;
+
+                // Fetch or initialize profile data
+                let nameDoc, usernameDoc, pictureDoc;
                 try {
-                    // Fetch profile data from Appwrite collections
-                    const usernameDocList = await databases.listDocuments(usernameCollectionId, [`userId = "${userData.id}"`]);
-                    const nameDocList = await databases.listDocuments(nameCollectionId, [`userId = "${userData.id}"`]);
-                    const pictureDocList = await databases.listDocuments(pictureCollectionId, [`userId = "${userData.id}"`]);
-
-                    const username = usernameDocList.documents[0]?.username;
-                    const name = nameDocList.documents[0]?.name;
-                    const picture = pictureDocList.documents[0]?.url || userData.image || defaultDP;
-
-                    document.getElementById('profilePic').src = picture;
-                    document.getElementById('userName').textContent = name;
-                    document.getElementById('userUsername').textContent = '@' + username;
-                    document.getElementById('userEmail').textContent = userData.email;
-
-                    // Store fetched data for later use if needed
-                    userData.username = username;
-                    userData.name = name;
-                    userData.picture = picture;
-                    localStorage.setItem('userData', JSON.stringify(userData));
-
-                } catch (error) {
-                    console.error("Error fetching profile data from Appwrite:", error);
-                    // Handle error (e.g., show a message to the user)
+                    nameDoc = await databases.getDocument(databaseId, nameCollectionId, user.$id);
+                } catch (e) {
+                    nameDoc = await databases.createDocument(databaseId, nameCollectionId, user.$id, { name: user.name });
                 }
-            } else {
-                window.location.href = 'index.html'; // Redirect to login if no user data
+                try {
+                    usernameDoc = await databases.getDocument(databaseId, usernameCollectionId, user.$id);
+                } catch (e) {
+                    usernameDoc = await databases.createDocument(databaseId, usernameCollectionId, user.$id, { username: user.email.split('@')[0] });
+                }
+                try {
+                    pictureDoc = await databases.getDocument(databaseId, pictureCollectionId, user.$id);
+                } catch (e) {
+                    pictureDoc = await databases.createDocument(databaseId, pictureCollectionId, user.$id, { picture: defaultDP });
+                }
+
+                document.getElementById('userName').textContent = nameDoc.name;
+                document.getElementById('userUsername').textContent = '@' + usernameDoc.username;
+                document.getElementById('profilePic').src = pictureDoc.picture;
+            } catch (error) {
+                window.location.href = 'index.html';
             }
-        }
+        };
 
         function changeDP() {
             document.getElementById('dpInput').click();
@@ -139,38 +138,18 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = async function(e) {
-                    try {
-                        const userData = JSON.parse(localStorage.getItem('userData'));
-                        const pictureDocList = await databases.listDocuments(pictureCollectionId, [`userId = "${userData.id}"`]);
-                        let pictureId = pictureDocList.documents[0]?.$id;
-
-                        if (pictureId) {
-                            await databases.updateDocument(pictureCollectionId, pictureId, { url: e.target.result });
-                        } else {
-                            await databases.createDocument(pictureCollectionId, { userId: userData.id, url: e.target.result });
-                        }
-                        document.getElementById('profilePic').src = e.target.result;
-                    } catch (error) {
-                        console.error("Error updating DP in Appwrite:", error);
-                    }
+                    const user = await account.get();
+                    await databases.updateDocument(databaseId, pictureCollectionId, user.$id, { picture: e.target.result });
+                    document.getElementById('profilePic').src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
         }
 
         async function removeDP() {
-            try {
-                const userData = JSON.parse(localStorage.getItem('userData'));
-                const pictureDocList = await databases.listDocuments(pictureCollectionId, [`userId = "${userData.id}"`]);
-                const pictureId = pictureDocList.documents[0]?.$id;
-
-                if (pictureId) {
-                    await databases.deleteDocument(pictureCollectionId, pictureId);
-                }
-                document.getElementById('profilePic').src = defaultDP;
-            } catch (error) {
-                console.error("Error removing DP in Appwrite:", error);
-            }
+            const user = await account.get();
+            await databases.updateDocument(databaseId, pictureCollectionId, user.$id, { picture: defaultDP });
+            document.getElementById('profilePic').src = defaultDP;
         }
 
         function toggleEditName() {
@@ -186,21 +165,10 @@
             if (event.key === 'Enter') {
                 const newName = event.target.value.trim();
                 if (newName) {
-                    try {
-                        const userData = JSON.parse(localStorage.getItem('userData'));
-                        const nameDocList = await databases.listDocuments(nameCollectionId, [`userId = "${userData.id}"`]);
-                        let nameId = nameDocList.documents[0]?.$id;
-
-                        if (nameId) {
-                            await databases.updateDocument(nameCollectionId, nameId, { name: newName });
-                        } else {
-                            await databases.createDocument(nameCollectionId, { userId: userData.id, name: newName });
-                        }
-                        document.getElementById('userName').textContent = newName;
-                        event.target.style.display = 'none';
-                    } catch (error) {
-                        console.error("Error updating name in Appwrite:", error);
-                    }
+                    const user = await account.get();
+                    await databases.updateDocument(databaseId, nameCollectionId, user.$id, { name: newName });
+                    document.getElementById('userName').textContent = newName;
+                    event.target.style.display = 'nowne';
                 }
             }
         }
@@ -210,7 +178,7 @@
             usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
             if (usernameInput.style.display === 'block') {
                 usernameInput.focus();
-                const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove @
+                const currentUsername = document.getElementById('userUsername').textContent.slice(1);
                 usernameInput.value = currentUsername;
             }
         }
@@ -219,21 +187,10 @@
             if (event.key === 'Enter') {
                 const newUsername = event.target.value.trim();
                 if (newUsername) {
-                    try {
-                        const userData = JSON.parse(localStorage.getItem('userData'));
-                        const usernameDocList = await databases.listDocuments(usernameCollectionId, [`userId = "${userData.id}"`]);
-                        let usernameId = usernameDocList.documents[0]?.$id;
-
-                        if (usernameId) {
-                            await databases.updateDocument(usernameCollectionId, usernameId, { username: newUsername });
-                        } else {
-                            await databases.createDocument(usernameCollectionId, { userId: userData.id, username: newUsername });
-                        }
-                        document.getElementById('userUsername').textContent = '@' + newUsername;
-                        event.target.style.display = 'none';
-                    } catch (error) {
-                        console.error("Error updating username in Appwrite:", error);
-                    }
+                    const user = await account.get();
+                    await databases.updateDocument(databaseId, usernameCollectionId, user.$id, { username: newUsername });
+                    document.getElementById('userUsername').textContent = '@' + newUsername;
+                    event.target.style.display = 'none';
                 } else {
                     alert('Username cannot be empty');
                 }
@@ -241,16 +198,8 @@
         }
 
         async function signOut() {
-            try {
-                const { Account } = Appwrite;
-                const account = new Account(client);
-                await account.deleteSession('current'); // Or delete all sessions
-                localStorage.removeItem('userData'); // Clear local data
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error("Error signing out:", error);
-                // Handle sign-out error
-            }
+            await account.deleteSession('current');
+            window.location.href = 'index.html';
         }
     </script>
 </body>
