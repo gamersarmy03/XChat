@@ -81,7 +81,7 @@
             <span class="username-prefix">@</span>
             <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
         </div>
-        <p id="userEmail"></p>
+        <p id="userPhone"></p>
         <button class="logout-btn" onclick="signOut()">Logout</button>
     </div>
 
@@ -126,8 +126,8 @@
                         localStorage.setItem('userData', JSON.stringify(updatedUserData));
                         document.getElementById('profilePic').src = updatedUserData.customDP || updatedUserData.image || defaultDP;
                         document.getElementById('userName').textContent = updatedUserData.name;
-                        document.getElementById('userEmail').textContent = updatedUserData.email;
-                        const username = updatedUserData.customUsername || updatedUserData.email.split('@')[0];
+                        document.getElementById('userPhone').textContent = updatedUserData.phoneNumber;
+                        const username = updatedUserData.customUsername || updatedUserData.phoneNumber.replace('+', '');
                         document.getElementById('userUsername').textContent = '@' + username;
                     } else {
                         console.log("No user data in Firestore, redirecting to index.html");
