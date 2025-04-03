@@ -50,7 +50,7 @@
             width: 24px;
             height: 24px;
             cursor: pointer;
-            fill: #ffffff;
+            fill: #ffffff; /* Ensures the SVG is white */
         }
         .search-input {
             display: none;
@@ -71,15 +71,13 @@
             align-items: center;
         }
     </style>
-    <!-- Appwrite SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.umd.min.js"></script>
 </head>
 <body>
     <div class="header">
         <div class="hamburger" onclick="toggleMenu()">☰</div>
         <div class="menu" id="menu">
             <a href="profile.html">Profile</a>
-        </div>
+            </div>
         <div class="search-container">
             <svg class="search-icon" onclick="toggleSearch()" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -91,51 +89,64 @@
         <h1>Welcome to XChit</h1>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
     <script>
-        const { Client, Account } = Appwrite;
+        const { Client, Databases } = Appwrite;
 
         const client = new Client();
-        client
-            .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject('67ed2822002be4a5e417');
+        client.setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
+              .setProject('67ed2822002be4a5e417');
 
-        const account = new Account(client);
+        const databases = new Databases(client);
+        const usernameCollectionId = '67ed4ccc003aeb32a47b';
+        const nameCollectionId = '67ed4c9400230d389eba';
+        const pictureCollectionId = '67ed2a2000013d191949';
 
-        window.onload = function() {
+        // Load user data from Appwrite on page load
+        window.onload = async function() {
             const userData = JSON.parse(localStorage.getItem('userData'));
-            if (!userData) {
-                console.log("No user data, redirecting to index.html");
-                window.location.href = 'index.html';
-                return;
-            }
+            if (userData) {
+                try {
+                    // Fetch profile data from Appwrite collections
+                    const usernameDocList = await databases.listDocuments(usernameCollectionId, [`userId = "${userData.id}"`]);
+                    const nameDocList = await databases.listDocuments(nameCollectionId, [`userId = "${userData.id}"`]);
+                    const pictureDocList = await databases.listDocuments(pictureCollectionId, [`userId = "${userData.id}"`]);
 
-            account.get()
-                .then((user) => {
-                    console.log("Session valid:", user);
-                    if (user.$id !== userData.id) {
-                        console.log("User ID mismatch, redirecting to index.html");
-                        window.location.href = 'index.html';
+                    const username = usernameDocList.documents[0]?.username;
+                    const name = nameDocList.documents[0]?.name;
+                    const picture = pictureDocList.documents[0]?.url || 'defaultdp.png';
+
+                    // Update UI with fetched data
+                    // Example:
+                    const profileLink = document.querySelector('.menu a[href="profile.html"]');
+                    if (profileLink) {
+                        profileLink.textContent = name || 'Profile';
                     }
-                })
-                .catch((error) => {
-                    console.error("Session invalid:", error);
-                    localStorage.removeItem('userData');
-                    window.location.href = 'index.html';
-                });
-        };
+
+                } catch (error) {
+                    console.error("Error fetching profile data on home page:", error);
+                }
+                // For now, we assume no chats exist, so show "Welcome to XChit"
+                // Later, you can add logic here to check for chats
+            } else {
+                window.location.href = 'index.html'; // Redirect to login if no user data
+            }
+        }
 
         function toggleMenu() {
             const menu = document.getElementById('menu');
             menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            // Hide search input when menu is toggled
             document.getElementById('searchInput').style.display = 'none';
         }
 
         function toggleSearch() {
             const searchInput = document.getElementById('searchInput');
             searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
+            // Hide menu when search is toggled
             document.getElementById('menu').style.display = 'none';
             if (searchInput.style.display === 'block') {
-                searchInput.focus();
+                searchInput.focus(); // Focus the input when shown
             }
         }
 
@@ -143,11 +154,13 @@
             const query = event.target.value.trim();
             if (event.key === 'Enter' && query) {
                 console.log('Searching for:', query);
-                event.target.value = '';
-                toggleSearch();
+                // Add your search logic here (e.g., filter @users or chats)
+                event.target.value = ''; // Clear input after search
+                toggleSearch(); // Hide search input after Enter
             }
         }
 
+        // Hide menu or search when clicking outside
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('menu');
             const hamburger = document.getElementsByClassName('hamburger')[0];
