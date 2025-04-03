@@ -32,8 +32,12 @@
             display: none;
         }
     </style>
+    <!-- Load the Google Identity Services library -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
 </head>
 <body>
     <div class="login-container">
@@ -44,15 +48,20 @@
     </div>
 
     <script>
-        const client = new Appwrite.Client();
-        const account = new Appwrite.Account(client);
-        const databases = new Appwrite.Databases(client);
+        // Firebase configuration and initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpNTyUP3B6JFnWZ6bByIe1Qj_AcLG_or0",
+            authDomain: "xchit-7d57a.firebaseapp.com",
+            projectId: "xchit-7d57a",
+            storageBucket: "xchit-7d57a.firebasestorage.app",
+            messagingSenderId: "1052972946536",
+            appId: "1:1052972946536:web:e94787cedfc67edf7157dd",
+            measurementId: "G-NQS3TXQ3RT"
+        };
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        client
-            .setEndpoint('https://cloud.appwrite.io/v1') // Default Appwrite endpoint
-            .setProject('67ed2822002be4a5e417'); // Your project ID
-
-        async function handleCredentialResponse(response) {
+        function handleCredentialResponse(response) {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
@@ -60,125 +69,34 @@
                 const credential = response.credential;
                 const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                // Authenticate with Appwrite using Google OAuth token
-                await account.createOAuth2Session(
-                    'google',
-                    window.location.origin + '/home.html', // Success redirect URL
-                    window.location.origin + '/index.html' // Failure redirect URL
-                );
-
-                const userData = {
+                // User data from Google
+                let userData = {
                     id: payload.sub,
                     name: payload.name,
                     email: payload.email,
-                    image: payload.picture
+                    image: payload.picture,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                // Check if user profile exists in Appwrite (for each collection)
-
-                // 1. Email and Image Collection
-                let emailDoc;
-                try {
-                    emailDoc = await databases.getDocument(
-                        '67ed2a13003e4a7f3cf6', // Database ID
-                        '67ed4d020023e9d65431', // Email Collection ID
-                        payload.sub // Document ID (Google sub)
-                    );
-                } catch (error) {
-                    if (error.code === 404) {
-                        // New user, create email and image document
-                        await databases.createDocument(
-                            '67ed2a13003e4a7f3cf6', // Database ID
-                            '67ed4d020023e9d65431', // Email Collection ID
-                            payload.sub, // Document ID
-                            {
-                                email: payload.email,
-                                image: payload.picture
-                            }
-                        );
-                    } else {
-                        throw error;
+                // Check Firestore for existing data and merge
+                db.collection('users').doc(userData.id).get().then((doc) => {
+                    if (doc.exists) {
+                        const existingData = doc.data();
+                        userData = {
+                            ...userData,
+                            customDP: existingData.customDP || null,
+                            customUsername: existingData.customUsername || null,
+                            name: existingData.name || userData.name
+                        };
                     }
-                }
-
-                // 2. Name Collection
-                let nameDoc;
-                try {
-                    nameDoc = await databases.getDocument(
-                        '67ed2a13003e4a7f3cf6', // Database ID
-                        '67ed4c9400230d389eba', // Name Collection ID
-                        payload.sub // Document ID
-                    );
-                    userData.name = nameDoc.name || payload.name;
-                } catch (error) {
-                    if (error.code === 404) {
-                        // New user, create name document
-                        await databases.createDocument(
-                            '67ed2a13003e4a7f3cf6', // Database ID
-                            '67ed4c9400230d389eba', // Name Collection ID
-                            payload.sub, // Document ID
-                            {
-                                name: payload.name
-                            }
-                        );
-                    } else {
-                        throw error;
-                    }
-                }
-
-                // 3. Custom DP Collection
-                let dpDoc;
-                try {
-                    dpDoc = await databases.getDocument(
-                        '67ed2a13003e4a7f3cf6', // Database ID
-                        '67ed2a2000013d191949', // DP Collection ID
-                        payload.sub // Document ID
-                    );
-                    userData.customDP = dpDoc.customDP || null;
-                } catch (error) {
-                    if (error.code === 404) {
-                        // New user, create DP document
-                        await databases.createDocument(
-                            '67ed2a13003e4a7f3cf6', // Database ID
-                            '67ed2a2000013d191949', // DP Collection ID
-                            payload.sub, // Document ID
-                            {
-                                customDP: null
-                            }
-                        );
-                    } else {
-                        throw error;
-                    }
-                }
-
-                // 4. Custom Username Collection
-                let usernameDoc;
-                try {
-                    usernameDoc = await databases.getDocument(
-                        '67ed2a13003e4a7f3cf6', // Database ID
-                        '67ed4ccc003aeb32a47b', // Username Collection ID
-                        payload.sub // Document ID
-                    );
-                    userData.customUsername = usernameDoc.customUsername || null;
-                } catch (error) {
-                    if (error.code === 404) {
-                        // New user, create username document
-                        await databases.createDocument(
-                            '67ed2a13003e4a7f3cf6', // Database ID
-                            '67ed4ccc003aeb32a47b', // Username Collection ID
-                            payload.sub, // Document ID
-                            {
-                                customUsername: null
-                            }
-                        );
-                    } else {
-                        throw error;
-                    }
-                }
-
-                // Store in localStorage for quick access
-                localStorage.setItem('userData', JSON.stringify(userData));
-                window.location.href = 'home.html';
+                    // Save to Firestore
+                    db.collection('users').doc(userData.id).set(userData, { merge: true })
+                        .then(() => {
+                            localStorage.setItem('userData', JSON.stringify(userData));
+                            window.location.href = 'home.html';
+                        })
+                        .catch((error) => showError('Failed to save user data: ' + error.message));
+                });
             } catch (error) {
                 showError('Sign-in failed: ' + error.message);
             } finally {
@@ -207,5 +125,6 @@
             google.accounts.id.prompt();
         };
     </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a5489ade8732ef',t:'MTc0MzY0ODg5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
