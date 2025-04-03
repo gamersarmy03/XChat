@@ -5,8 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - XChit</title>
     <style>
-        /* Same styles as before */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .profile-container {
+            text-align: center;
+        }
+        .profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+        .edit-btn, .logout-btn, .remove-dp-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .edit-btn:hover, .logout-btn:hover, .remove-dp-btn:hover {
+            background-color: #cccccc;
+        }
+        .edit-input {
+            display: none;
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            margin: 5px 0;
+            width: 200px;
+        }
+        .username-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .username-prefix {
+            color: #ffffff;
+            margin-right: 5px;
+        }
+        #usernameInput {
+            width: 180px; /* Adjusted to account for prefix */
+        }
     </style>
+    <!-- Load Appwrite SDK -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.min.js"></script>
 </head>
 <body>
@@ -34,22 +87,45 @@
         const { Client, Databases } = Appwrite;
         const client = new Client()
             .setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
-            .setProject('67ed2822002be4a5e417');
+            .setProject('67ed2822002be4a5e417'); // Your Project ID
         const databases = new Databases(client);
 
-        const defaultDP = 'defaultdp.png';
+        const defaultDP = 'defaultdp.png'; // Path to your default DP image
 
-        window.onload = function() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            if (userData) {
-                document.getElementById('profilePic').src = userData.customDP || defaultDP;
-                document.getElementById('userName').textContent = userData.name;
-                document.getElementById('userEmail').textContent = userData.email;
-                const username = userData.customUsername || 'anonymous';
-                document.getElementById('userUsername').textContent = '@' + username;
-            } else {
-                window.location.href = 'index.html';
+        // Load user data on page load
+        window.onload = async function() {
+            let userData = JSON.parse(localStorage.getItem('userData'));
+            if (!userData) {
+                window.location.href = 'index.html'; // Redirect to login if no user data
+                return;
             }
+
+            try {
+                // Fetch the latest user data from Appwrite
+                const updatedUserData = await databases.getDocument(
+                    'default', // Database ID (replace if different)
+                    '67ee04300014f5069e03', // Collection ID
+                    userData.userId
+                );
+
+                // Update localStorage with the latest data from Appwrite
+                localStorage.setItem('userData', JSON.stringify(updatedUserData));
+                userData = updatedUserData;
+            } catch (error) {
+                console.error('Failed to fetch user data from Appwrite:', error);
+                // Proceed with local data if Appwrite fetch fails
+            }
+
+            // Display user data
+            document.getElementById('profilePic').src = userData.customDP || defaultDP;
+            document.getElementById('userName').textContent = userData.name;
+            document.getElementById('userEmail').textContent = userData.email;
+            const username = userData.customUsername || 'anonymous';
+            document.getElementById('userUsername').textContent = '@' + username;
+        }
+
+        function changeDP() {
+            document.getElementById('dpInput').click();
         }
 
         async function uploadDP(event) {
@@ -127,7 +203,7 @@
         async function updateProfileInAppwrite(userData) {
             try {
                 await databases.updateDocument(
-                    'default', // Database ID
+                    'default', // Database ID (replace if different)
                     '67ee04300014f5069e03', // Collection ID
                     userData.userId,
                     {
