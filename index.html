@@ -22,6 +22,17 @@
             max-width: 200px;
             margin-bottom: 20px;
         }
+        .login-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .login-btn:hover {
+            background-color: #cccccc;
+        }
         .loading {
             display: none;
             margin-top: 20px;
@@ -32,8 +43,6 @@
             display: none;
         }
     </style>
-    <!-- Load the Google Identity Services library -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
@@ -42,7 +51,7 @@
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
+        <button class="login-btn" onclick="signInWithGoogle()">Sign in with Google</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
@@ -59,49 +68,48 @@
             measurementId: "G-NQS3TXQ3RT"
         };
         const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.firestore();
 
-        function handleCredentialResponse(response) {
-            try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
+        function signInWithGoogle() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
 
-                const credential = response.credential;
-                const payload = JSON.parse(atob(credential.split('.')[1]));
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    const user = result.user;
+                    const userData = {
+                        id: user.uid,
+                        name: user.displayName || 'User',
+                        email: user.email,
+                        image: user.photoURL || 'defaultdp.png',
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    };
 
-                // User data from Google
-                let userData = {
-                    id: payload.sub,
-                    name: payload.name,
-                    email: payload.email,
-                    image: payload.picture,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                // Check Firestore for existing data and merge
-                db.collection('users').doc(userData.id).get().then((doc) => {
-                    if (doc.exists) {
-                        const existingData = doc.data();
-                        userData = {
-                            ...userData,
-                            customDP: existingData.customDP || null,
-                            customUsername: existingData.customUsername || null,
-                            name: existingData.name || userData.name
-                        };
-                    }
-                    // Save to Firestore
-                    db.collection('users').doc(userData.id).set(userData, { merge: true })
-                        .then(() => {
-                            localStorage.setItem('userData', JSON.stringify(userData));
-                            window.location.href = 'home.html';
-                        })
-                        .catch((error) => showError('Failed to save user data: ' + error.message));
+                    // Check Firestore for existing custom data and merge
+                    db.collection('users').doc(userData.id).get().then((doc) => {
+                        if (doc.exists) {
+                            const existingData = doc.data();
+                            userData.customDP = existingData.customDP || null;
+                            userData.customUsername = existingData.customUsername || null;
+                            userData.name = existingData.name || userData.name;
+                        }
+                        // Save to Firestore
+                        return db.collection('users').doc(userData.id).set(userData, { merge: true });
+                    }).then(() => {
+                        localStorage.setItem('userData', JSON.stringify(userData));
+                        window.location.href = 'home.html';
+                    }).catch((error) => {
+                        showError('Failed to save user data: ' + error.message);
+                    });
+                })
+                .catch((error) => {
+                    showError('Sign-in failed: ' + error.message);
+                })
+                .finally(() => {
+                    document.getElementById('loading').style.display = 'none';
                 });
-            } catch (error) {
-                showError('Sign-in failed: ' + error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
         }
 
         function showError(message) {
@@ -109,21 +117,6 @@
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
         }
-
-        window.onload = function() {
-            google.accounts.id.initialize({
-                client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
-                callback: handleCredentialResponse,
-                auto_select: true
-            });
-
-            google.accounts.id.renderButton(
-                document.getElementById('g_id_signin'),
-                { theme: 'outline', size: 'large' }
-            );
-
-            google.accounts.id.prompt();
-        };
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a5489ade8732ef',t:'MTc0MzY0ODg5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
