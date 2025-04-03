@@ -31,25 +31,39 @@
             margin-top: 20px;
             display: none;
         }
-        .login-btn {
-            background-color: #ffffff;
-            color: #000000;
-            padding: 10px 20px;
+        .login-form input {
+            display: block;
+            margin: 10px auto;
+            padding: 5px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            width: 200px;
+        }
+        .login-form button {
+            padding: 5px 10px;
+            background-color: #fff;
+            color: #000;
             border: none;
             border-radius: 5px;
             cursor: pointer;
         }
-        .login-btn:hover {
-            background-color: #cccccc;
+        .login-form button:hover {
+            background-color: #ccc;
         }
     </style>
-    <!-- Load Appwrite SDK -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.min.js"></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <button class="login-btn" onclick="loginWithGoogle()">Login with Google</button>
+        <div class="login-form">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+            <button onclick="register()">Register</button>
+        </div>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
@@ -57,71 +71,83 @@
     <script>
         const { Client, Account, Databases } = Appwrite;
         const client = new Client()
-            .setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite endpoint
-            .setProject('67ed2822002be4a5e417'); // Your Project ID
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('67ed2822002be4a5e417'); // Your project ID
 
         const account = new Account(client);
         const databases = new Databases(client);
 
-        async function loginWithGoogle() {
+        async function login() {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                // Initiate Google OAuth login with Appwrite
-                account.createOAuth2Session(
-                    'google',
-                    window.location.origin + '/home.html', // Success redirect URL
-                    window.location.origin + '/index.html' // Failure redirect URL
-                );
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                // Log in with Appwrite
+                const session = await account.createEmailPasswordSession(email, password);
+
+                // Fetch user profile from the database
+                const userId = session.userId;
+                const userData = await getUserProfile(userId);
+
+                // Store user data in localStorage for quick access
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
             } catch (error) {
                 showError('Login failed: ' + error.message);
+            } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
-        // Handle OAuth callback
-        window.onload = async function() {
+        async function register() {
             try {
-                // Check if this is a redirect from OAuth
-                const user = await account.get();
-                if (user) {
-                    document.getElementById('loading').style.display = 'block';
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
 
-                    // Fetch or create user profile in Appwrite database
-                    let userData;
-                    try {
-                        userData = await databases.getDocument(
-                            'default', // Database ID (replace if different)
-                            '67ee04300014f5069e03', // Collection ID
-                            user.$id
-                        );
-                    } catch (e) {
-                        // If no profile exists, create one with Google data
-                        userData = {
-                            userId: user.$id,
-                            name: user.name || 'Google User',
-                            email: user.email || '',
-                            customDP: '',
-                            customUsername: ''
-                        };
-                        await databases.createDocument(
-                            'default', // Database ID
-                            '67ee04300014f5069e03', // Collection ID
-                            user.$id, // Document ID
-                            userData
-                        );
-                    }
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
 
-                    // Store userData in localStorage
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    window.location.href = 'home.html';
-                }
+                // Register a new user
+                const user = await account.create('unique()', email, password);
+                await account.createEmailPasswordSession(email, password); // Auto-login after registration
+
+                // Create a user profile in the database
+                const userData = {
+                    userId: user.$id,
+                    name: email.split('@')[0], // Default name
+                    email: email,
+                    customDP: 'defaultdp.png', // Default DP
+                    customUsername: email.split('@')[0] // Default username
+                };
+                await databases.createDocument(
+                    '67ee04300014f5069e03', // Database ID
+                    'users', // Collection ID (replace if different)
+                    user.$id, // Document ID
+                    userData
+                );
+
+                localStorage.setItem('userData', JSON.stringify(userData));
+                window.location.href = 'home.html';
             } catch (error) {
-                console.log('No active session or failed to fetch user:', error);
-                // Stay on login page if no session
+                showError('Registration failed: ' + error.message);
             } finally {
                 document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function getUserProfile(userId) {
+            try {
+                const response = await databases.getDocument(
+                    '67ee04300014f5069e03', // Database ID
+                    'users', // Collection ID (replace if different)
+                    userId
+                );
+                return response;
+            } catch (error) {
+                throw new Error('Failed to fetch user profile: ' + error.message);
             }
         }
 
