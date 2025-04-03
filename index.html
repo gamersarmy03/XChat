@@ -44,68 +44,61 @@
     </div>
 
     <script>
-        function handleCredentialResponse(response) {
+  const WORKER_URL = 'https://xchit-user-data.ff3005000.workers.dev'; // Replace with your Worker URL
+
+  async function handleCredentialResponse(response) {
     try {
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('error').style.display = 'none';
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('error').style.display = 'none';
 
-        const credential = response.credential;
-        const payload = JSON.parse(atob(credential.split('.')[1]));
+      const credential = response.credential;
+      const payload = JSON.parse(atob(credential.split('.')[1]));
 
-        // Get existing userData from localStorage, if any
-        let existingUserData = JSON.parse(localStorage.getItem('userData')) || {};
+      // Fetch existing user data from Cloudflare KV
+      const userId = payload.sub;
+      const fetchResponse = await fetch(`${WORKER_URL}?userId=${userId}`);
+      let userData = await fetchResponse.json();
 
-        // Create new userData from Google payload
-        let userData = {
-            id: payload.sub,
-            name: payload.name,
-            email: payload.email,
-            image: payload.picture
+      // If no data exists, initialize with Google payload
+      if (Object.keys(userData).length === 0) {
+        userData = {
+          id: userId,
+          name: payload.name,
+          email: payload.email,
+          image: payload.picture,
         };
+      }
 
-        // Merge existing customizations into the new userData
-        if (existingUserData.customDP) {
-            userData.customDP = existingUserData.customDP;
-        }
-        if (existingUserData.customUsername) {
-            userData.customUsername = existingUserData.customUsername;
-        }
-        if (existingUserData.name && existingUserData.name !== payload.name) {
-            userData.name = existingUserData.name; // Preserve custom name if changed
-        }
-
-        // Store the merged userData
-        localStorage.setItem('userData', JSON.stringify(userData));
-        window.location.href = 'home.html';
+      // Store locally for this session
+      localStorage.setItem('userData', JSON.stringify(userData));
+      window.location.href = 'home.html';
     } catch (error) {
-        showError('Sign-in failed: ' + error.message);
+      showError('Sign-in failed: ' + error.message);
     } finally {
-        document.getElementById('loading').style.display = 'none';
+      document.getElementById('loading').style.display = 'none';
     }
-}
+  }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
+  function showError(message) {
+    const errorDiv = document.getElementById('error');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+  }
 
-        // Initialize Google Identity Services
-        window.onload = function() {
-            google.accounts.id.initialize({
-                client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
-                callback: handleCredentialResponse,
-                auto_select: true // Optional: Auto-selects if only one account is available
-            });
+  window.onload = function() {
+    google.accounts.id.initialize({
+      client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
+      callback: handleCredentialResponse,
+      auto_select: true,
+    });
 
-            google.accounts.id.renderButton(
-                document.getElementById('g_id_signin'),
-                { theme: 'outline', size: 'large' } // Customize button (optional)
-            );
+    google.accounts.id.renderButton(
+      document.getElementById('g_id_signin'),
+      { theme: 'outline', size: 'large' }
+    );
 
-            // Prompt the user to sign in (optional One Tap prompt)
-            google.accounts.id.prompt();
-        };
-    </script>
+    google.accounts.id.prompt();
+  };
+</script>
 </body>
 </html>
