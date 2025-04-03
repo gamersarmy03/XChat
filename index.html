@@ -92,16 +92,17 @@
             const auth = firebase.auth();
             const db = firebase.firestore();
             console.log("Firebase initialized successfully");
+            alert("Firebase initialized successfully");
 
             // Set language code
-            auth.languageCode = 'en'; // Adjust as needed (e.g., 'it' for Italian)
+            auth.languageCode = 'en';
 
             // Initialize reCAPTCHA verifier
             window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('sign-in-button', {
                 'size': 'invisible',
                 'callback': (response) => {
-                    console.log("reCAPTCHA solved, requesting OTP:", response);
-                    // OTP request is triggered manually in requestOTP()
+                    console.log("reCAPTCHA solved:", response);
+                    // Do not call requestOTP here; it’s triggered manually
                 },
                 'expired-callback': () => {
                     console.log("reCAPTCHA expired");
@@ -119,15 +120,21 @@
             window.recaptchaVerifier.render().then((widgetId) => {
                 console.log("reCAPTCHA rendered, widget ID:", widgetId);
                 window.recaptchaWidgetId = widgetId;
+                alert("reCAPTCHA loaded successfully");
             }).catch((error) => {
                 console.error("reCAPTCHA render failed:", error);
                 showError("Failed to load reCAPTCHA: " + error.message);
+                alert("reCAPTCHA failed to load: " + error.message);
             });
 
             function requestOTP() {
+                console.log("requestOTP function called");
+                alert("Send OTP button clicked");
+
                 const phoneNumber = document.getElementById('phoneInput').value.trim();
                 if (!phoneNumber || !/^\+\d{10,15}$/.test(phoneNumber)) {
                     showError("Please enter a valid phone number (e.g., +12025550123)");
+                    alert("Invalid phone number format");
                     return;
                 }
 
@@ -139,6 +146,7 @@
                 auth.signInWithPhoneNumber(phoneNumber, appVerifier)
                     .then((confirmationResult) => {
                         console.log("OTP sent successfully:", confirmationResult.verificationId);
+                        alert("OTP sent to " + phoneNumber);
                         window.confirmationResult = confirmationResult;
                         document.getElementById('loading').style.display = 'none';
                         document.getElementById('phoneInput').style.display = 'none';
@@ -149,15 +157,20 @@
                     .catch((error) => {
                         console.error("Error sending OTP:", error.code, error.message);
                         showError("Failed to send OTP: " + error.message);
+                        alert("Failed to send OTP: " + error.message);
                         document.getElementById('loading').style.display = 'none';
                         resetRecaptcha();
                     });
             }
 
             function verifyOTP() {
+                console.log("verifyOTP function called");
+                alert("Verify OTP button clicked");
+
                 const code = document.getElementById('otpInput').value.trim();
                 if (!code || code.length !== 6) {
                     showError("Please enter a valid 6-digit OTP");
+                    alert("Invalid OTP format");
                     return;
                 }
 
@@ -168,6 +181,7 @@
                 window.confirmationResult.confirm(code)
                     .then((result) => {
                         console.log("Phone number verified:", result.user.uid);
+                        alert("Phone number verified successfully");
                         const user = result.user;
                         const userData = {
                             id: user.uid,
@@ -200,6 +214,7 @@
                     .catch((error) => {
                         console.error("Error verifying OTP:", error.code, error.message);
                         showError("Failed to verify OTP: " + error.message);
+                        alert("Failed to verify OTP: " + error.message);
                         document.getElementById('loading').style.display = 'none';
                     });
             }
@@ -220,6 +235,7 @@
         } catch (error) {
             console.error("Firebase initialization failed:", error);
             showError("Firebase initialization failed: " + error.message);
+            alert("Firebase initialization failed: " + error.message);
         }
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a5489ade8732ef',t:'MTc0MzY0ODg5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
