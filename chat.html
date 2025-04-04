@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - XChit</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        .chat-header {
+            padding: 10px;
+            background-color: #333;
+            border-bottom: 1px solid #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h2 {
+            margin: 0;
+        }
+        .back-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .back-btn:hover {
+            background-color: #cccccc;
+        }
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            max-width: 70%;
+        }
+        .message.sent {
+            background-color: #007bff;
+            margin-left: auto;
+            text-align: right;
+        }
+        .message.received {
+            background-color: #555;
+            margin-right: auto;
+        }
+        .message-sender {
+            font-size: 0.8em;
+            color: #cccccc;
+        }
+        .message-time {
+            font-size: 0.7em;
+            color: #999;
+        }
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background-color: #333;
+            border-top: 1px solid #ffffff;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 5px;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            background-color: #444;
+            color: #ffffff;
+        }
+        .chat-input button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .chat-input button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2 id="recipientUsername"></h2>
+            <button class="back-btn" onclick="goBack()">Back</button>
+        </div>
+        <div class="chat-history" id="chatHistory"></div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="Type a message..." onkeyup="sendMessage(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const client = new Appwrite.Client()
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('67ed2822002be4a5e417');
+
+        const account = new Appwrite.Account(client);
+        const database = new Appwrite.Databases(client);
+
+        let currentUserId, recipientId, recipientUsername, currentUser;
+
+        window.onload = async function() {
+            try {
+                await account.get();
+                currentUserId = localStorage.getItem('userId');
+                if (!currentUserId) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // Get the recipient ID from the URL
+                const urlParams = new URLSearchParams(window.location.search);
+                recipientId = urlParams.get('recipientId');
+                if (!recipientId) {
+                    window.location.href = 'home.html';
+                    return;
+                }
+
+                // Get current user and recipient details
+                currentUser = await database.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    currentUserId
+                );
+                const recipient = await database.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    recipientId
+                );
+                recipientUsername = recipient.username;
+                document.getElementById('recipientUsername').textContent = `@${recipientUsername}`;
+
+                // Load chat history
+                await loadChatHistory();
+
+                // Subscribe to real-time messages
+                subscribeToMessages();
+            } catch (error) {
+                console.error('Error loading chat:', error);
+                window.location.href = 'home.html';
+            }
+        }
+
+        async function loadChatHistory() {
+            try {
+                const response = await database.listDocuments(
+                    '67ed2a13003e4a7f3cf6',
+                    'messages',
+                    [
+                        Appwrite.Query.or([
+                            Appwrite.Query.and([
+                                Appwrite.Query.equal('senderId', currentUserId),
+                                Appwrite.Query.equal('recipientId', recipientId)
+                            ]),
+                            Appwrite.Query.and([
+                                Appwrite.Query.equal('senderId', recipientId),
+                                Appwrite.Query.equal('recipientId', currentUserId)
+                            ])
+                        ]),
+                        Appwrite.Query.orderAsc('timestamp')
+                    ]
+                );
+
+                const chatHistory = document.getElementById('chatHistory');
+                chatHistory.innerHTML = '';
+                response.documents.forEach(message => {
+                    displayMessage(message);
+                });
+                scrollToBottom();
+            } catch (error) {
+                console.error('Error loading chat history:', error);
+            }
+        }
+
+        function displayMessage(message) {
+            const chatHistory = document.getElementById('chatHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.senderId === currentUserId ? 'sent' : 'received'}`;
+            messageDiv.innerHTML = `
+                <div class="message-sender">@${message.senderUsername}</div>
+                <div>${message.content}</div>
+                <div class="message-time">${new Date(message.timestamp).toLocaleTimeString()}</div>
+            `;
+            chatHistory.appendChild(messageDiv);
+        }
+
+        async function sendMessage(event) {
+            if (event && event.key !== 'Enter') return;
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+            if (!content) return;
+
+            try {
+                await database.createDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    'messages',
+                    Appwrite.ID.unique(),
+                    {
+                        senderId: currentUserId,
+                        recipientId: recipientId,
+                        senderUsername: currentUser.username,
+                        content: content,
+                        timestamp: new Date().toISOString()
+                    }
+                );
+                messageInput.value = '';
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+
+        function subscribeToMessages() {
+            client.subscribe(
+                `databases.67ed2a13003e4a7f3cf6.collections.messages.documents`,
+                (response) => {
+                    const message = response.payload;
+                    if (
+                        (message.senderId === currentUserId && message.recipientId === recipientId) ||
+                        (message.senderId === recipientId && message.recipientId === currentUserId)
+                    ) {
+                        displayMessage(message);
+                        scrollToBottom();
+                    }
+                }
+            );
+        }
+
+        function scrollToBottom() {
+            const chatHistory = document.getElementById('chatHistory');
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function goBack() {
+            window.location.href = 'home.html';
+        }
+    </script>
+</body>
+</html>
