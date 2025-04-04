@@ -53,7 +53,7 @@
             background-color: #ccc;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.min.js" defer></script>
 </head>
 <body>
     <div class="login-container">
@@ -69,93 +69,97 @@
     </div>
 
     <script>
-        const { Client, Account, Databases } = Appwrite;
-        const client = new Client()
-            .setEndpoint('https://cloud.appwrite.io/v1')
-            .setProject('67ed2822002be4a5e417'); // Your project ID
+        // Wait for the Appwrite SDK to load
+        window.addEventListener('load', function() {
+            // Initialize Appwrite client
+            const client = new Appwrite.Client()
+                .setEndpoint('https://cloud.appwrite.io/v1')
+                .setProject('67ed2822002be4a5e417'); // Your project ID
 
-        const account = new Account(client);
-        const databases = new Databases(client);
+            const account = new Appwrite.Account(client);
+            const databases = new Appwrite.Databases(client);
 
-        async function login() {
-            try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
+            // Expose functions to the global scope
+            window.login = async function() {
+                try {
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
 
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
 
-                // Log in with Appwrite
-                const session = await account.createEmailPasswordSession(email, password);
+                    // Log in with Appwrite
+                    const session = await account.createEmailPasswordSession(email, password);
 
-                // Fetch user profile from the database
-                const userId = session.userId;
-                const userData = await getUserProfile(userId);
+                    // Fetch user profile from the database
+                    const userId = session.userId;
+                    const userData = await getUserProfile(userId);
 
-                // Store user data in localStorage for quick access
-                localStorage.setItem('userData', JSON.stringify(userData));
-                window.location.href = 'home.html';
-            } catch (error) {
-                showError('Login failed: ' + error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+                    // Store user data in localStorage for quick access
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    window.location.href = 'home.html';
+                } catch (error) {
+                    showError('Login failed: ' + error.message);
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+
+            window.register = async function() {
+                try {
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+
+                    // Register a new user
+                    const user = await account.create('unique()', email, password);
+                    await account.createEmailPasswordSession(email, password); // Auto-login after registration
+
+                    // Create a user profile in the database
+                    const userData = {
+                        userId: user.$id,
+                        name: email.split('@')[0], // Default name
+                        email: email,
+                        customDP: 'defaultdp.png', // Default DP
+                        customUsername: email.split('@')[0] // Default username
+                    };
+                    await databases.createDocument(
+                        '67ee04300014f5069e03', // Database ID
+                        'users', // Collection ID (replace if different)
+                        user.$id, // Document ID
+                        userData
+                    );
+
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    window.location.href = 'home.html';
+                } catch (error) {
+                    showError('Registration failed: ' + error.message);
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+
+            async function getUserProfile(userId) {
+                try {
+                    const response = await databases.getDocument(
+                        '67ee04300014f5069e03', // Database ID
+                        '67ee9da70025aa03c173', // Collection ID (replace if different)
+                        userId
+                    );
+                    return response;
+                } catch (error) {
+                    throw new Error('Failed to fetch user profile: ' + error.message);
+                }
             }
-        }
 
-        async function register() {
-            try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
-
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-
-                // Register a new user
-                const user = await account.create('unique()', email, password);
-                await account.createEmailPasswordSession(email, password); // Auto-login after registration
-
-                // Create a user profile in the database
-                const userData = {
-                    userId: user.$id,
-                    name: email.split('@')[0], // Default name
-                    email: email,
-                    customDP: 'defaultdp.png', // Default DP
-                    customUsername: email.split('@')[0] // Default username
-                };
-                await databases.createDocument(
-                    '67ee04300014f5069e03', // Database ID
-                    'users', // Collection ID (replace if different)
-                    user.$id, // Document ID
-                    userData
-                );
-
-                localStorage.setItem('userData', JSON.stringify(userData));
-                window.location.href = 'home.html';
-            } catch (error) {
-                showError('Registration failed: ' + error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+            function showError(message) {
+                const errorDiv = document.getElementById('error');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
             }
-        }
-
-        async function getUserProfile(userId) {
-            try {
-                const response = await databases.getDocument(
-                    '67ee04300014f5069e03', // Database ID
-                    'users', // Collection ID (replace if different)
-                    userId
-                );
-                return response;
-            } catch (error) {
-                throw new Error('Failed to fetch user profile: ' + error.message);
-            }
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
+        });
     </script>
 </body>
 </html>
