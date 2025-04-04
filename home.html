@@ -115,6 +115,13 @@
         }
         .conversation-sender {
             font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+        }
+        .verified-tick {
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
         }
         .conversation-message {
             color: #cccccc;
@@ -296,12 +303,16 @@
                         }
                     }
 
+                    // Check if the sender's username is @anmolverma to add the verified tick
+                    const isVerified = sender.username === 'anmolverma';
+                    const verifiedTick = isVerified ? `<img src="blue.png" class="verified-tick" alt="Verified Tick">` : '';
+
                     const conversationItem = document.createElement('div');
                     conversationItem.className = 'conversation-item';
                     conversationItem.innerHTML = `
                         <img src="${profilePicUrl}" class="conversation-pic" alt="Sender Profile Picture">
                         <div class="conversation-details">
-                            <div class="conversation-sender">${sender.name}</div>
+                            <div class="conversation-sender">${sender.name}${verifiedTick}</div>
                             <div class="conversation-message">${message.content}</div>
                         </div>
                     `;
