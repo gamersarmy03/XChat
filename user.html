@@ -24,6 +24,15 @@
             border-radius: 50%;
             margin-bottom: 20px;
         }
+        .user-name {
+            display: inline-flex;
+            align-items: center;
+        }
+        .verified-tick {
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
+        }
         .back-btn {
             background-color: #ffffff;
             color: #000000;
@@ -42,7 +51,7 @@
 <body>
     <div class="user-container">
         <img id="userPic" class="user-pic" alt="User Profile Picture">
-        <h2 id="userName"></h2>
+        <h2 id="userName" class="user-name"></h2>
         <p id="userUsername"></p>
         <button class="back-btn" onclick="goBack()">Back to Chat</button>
     </div>
@@ -91,8 +100,16 @@
                     }
                 }
 
+                // Check for verified status
+                let verifiedTick = '';
+                if (user.username === 'anmolverma') {
+                    verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
+                } else if (user.email === 'gamersarmy03@gmail.com' || user.email === 'puspasoni95@gmail.com') {
+                    verifiedTick = `<img src="gold.png" class="verified-tick" alt="Gold Verified Tick">`;
+                }
+
                 document.getElementById('userPic').src = profilePicUrl;
-                document.getElementById('userName').textContent =[user.name;
+                document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
                 document.getElementById('userUsername').textContent = '@' + user.username;
             } catch (error) {
                 console.error('Error loading user profile:', error);
