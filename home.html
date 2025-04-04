@@ -98,9 +98,20 @@
             border-radius: 5px;
             margin-bottom: 10px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
         }
         .conversation-item:hover {
             background-color: #555;
+        }
+        .conversation-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .conversation-details {
+            flex: 1;
         }
         .conversation-sender {
             font-weight: bold;
@@ -147,6 +158,9 @@
 
         const account = new Appwrite.Account(client);
         const database = new Appwrite.Databases(client);
+        const storage = new Appwrite.Storage(client);
+        const bucketId = '67ef59d4002282002e07';
+        const defaultDP = 'defaultdp.png';
 
         let currentUserId;
 
@@ -265,11 +279,31 @@
 
                 for (const senderId in conversations) {
                     const message = conversations[senderId];
+
+                    // Fetch the sender's profile data to get their profile picture
+                    const sender = await database.getDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        senderId
+                    );
+
+                    let profilePicUrl = defaultDP;
+                    if (sender.profilepicture && sender.profilepicture !== defaultDP) {
+                        if (sender.profilepicture.startsWith('http')) {
+                            profilePicUrl = sender.profilepicture;
+                        } else {
+                            profilePicUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${sender.profilepicture}/view?project=${client.config.project}`;
+                        }
+                    }
+
                     const conversationItem = document.createElement('div');
                     conversationItem.className = 'conversation-item';
                     conversationItem.innerHTML = `
-                        <div class="conversation-sender">@${message.senderUsername}</div>
-                        <div class="conversation-message">${message.content}</div>
+                        <img src="${profilePicUrl}" class="conversation-pic" alt="Sender Profile Picture">
+                        <div class="conversation-details">
+                            <div class="conversation-sender">@${message.senderUsername}</div>
+                            <div class="conversation-message">${message.content}</div>
+                        </div>
                     `;
                     conversationItem.onclick = () => {
                         window.location.href = `chat.html?recipientId=${senderId}`;
