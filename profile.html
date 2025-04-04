@@ -87,19 +87,22 @@
             .setEndpoint('https://cloud.appwrite.io/v1')
             .setProject('67ed2822002be4a5e417');
 
+        const account = new Appwrite.Account(client);
         const database = new Appwrite.Databases(client);
         const storage = new Appwrite.Storage(client);
-        const bucketId = '67ef59d4002282002e07'; // Replace with your bucket ID
+        const bucketId = 'YOUR_BUCKET_ID'; // Replace with your bucket ID
         const defaultDP = 'defaultdp.png';
 
         window.onload = async function() {
-            const userId = localStorage.getItem('userId');
-            if (!userId) {
-                window.location.href = 'index.html';
-                return;
-            }
-
             try {
+                // Verify the user is logged in
+                await account.get();
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
                 const user = await database.getDocument(
                     '67ed2a13003e4a7f3cf6',
                     '67ee9da70025aa03c173',
@@ -255,7 +258,7 @@
 
         async function updateUsername(event) {
             if (event.key === 'Enter') {
-                const newUsername = event.target.value.trim();
+                const newUsername = event.target.value.trim().toLowerCase();
                 if (!newUsername) {
                     alert('Username cannot be empty');
                     return;
@@ -263,23 +266,20 @@
 
                 const userId = localStorage.getItem('userId');
                 try {
-                    // Check if the new username is already taken by another user
                     const response = await database.listDocuments(
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
                         [
                             Appwrite.Query.equal('username', newUsername),
-                            Appwrite.Query.notEqual('$id', userId) // Exclude the current user
+                            Appwrite.Query.notEqual('$id', userId)
                         ]
                     );
 
                     if (response.documents.length > 0) {
-                        // Username is already taken
                         alert('Username "' + newUsername + '" is already taken. Please choose a different username.');
                         return;
                     }
 
-                    // If username is available, proceed with the update
                     await database.updateDocument(
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
@@ -297,7 +297,12 @@
             }
         }
 
-        function signOut() {
+        async function signOut() {
+            try {
+                await account.deleteSession('current');
+            } catch (error) {
+                console.error('Error signing out:', error);
+            }
             localStorage.removeItem('userId');
             window.location.href = 'index.html';
         }
