@@ -119,31 +119,59 @@
 
         async function uploadDP(event) {
             const file = event.target.files[0];
-            if (file) {
+            if (!file) {
+                console.error('No file selected');
+                return;
+            }
+
+            try {
                 const reader = new FileReader();
                 reader.onload = async function(e) {
+                    const imageData = e.target.result;
                     const userId = localStorage.getItem('userId');
+
+                    if (!userId) {
+                        console.error('No user ID found');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+
+                    // Update Appwrite document with new profile picture
                     await database.updateDocument(
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
                         userId,
-                        { profilepicture: e.target.result }
+                        { profilepicture: imageData }
                     );
-                    document.getElementById('profilePic').src = e.target.result;
+
+                    // Update UI
+                    document.getElementById('profilePic').src = imageData;
+                    console.log('Profile picture updated successfully');
+                };
+                reader.onerror = function() {
+                    console.error('Error reading file');
                 };
                 reader.readAsDataURL(file);
+            } catch (error) {
+                console.error('Error uploading DP:', error);
+                alert('Failed to update profile picture: ' + error.message);
             }
         }
 
         async function removeDP() {
             const userId = localStorage.getItem('userId');
-            await database.updateDocument(
-                '67ed2a13003e4a7f3cf6',
-                '67ee9da70025aa03c173',
-                userId,
-                { profilepicture: defaultDP }
-            );
-            document.getElementById('profilePic').src = defaultDP;
+            try {
+                await database.updateDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId,
+                    { profilepicture: defaultDP }
+                );
+                document.getElementById('profilePic').src = defaultDP;
+            } catch (error) {
+                console.error('Error removing DP:', error);
+                alert('Failed to remove profile picture: ' + error.message);
+            }
         }
 
         function toggleEditName() {
@@ -160,14 +188,19 @@
                 const newName = event.target.value.trim();
                 if (newName) {
                     const userId = localStorage.getItem('userId');
-                    await database.updateDocument(
-                        '67ed2a13003e4a7f3cf6',
-                        '67ee9da70025aa03c173',
-                        userId,
-                        { name: newName }
-                    );
-                    document.getElementById('userName').textContent = newName;
-                    event.target.style.display = 'none';
+                    try {
+                        await database.updateDocument(
+                            '67ed2a13003e4a7f3cf6',
+                            '67ee9da70025aa03c173',
+                            userId,
+                            { name: newName }
+                        );
+                        document.getElementById('userName').textContent = newName;
+                        event.target.style.display = 'none';
+                    } catch (error) {
+                        console.error('Error updating name:', error);
+                        alert('Failed to update name: ' + error.message);
+                    }
                 }
             }
         }
@@ -187,14 +220,19 @@
                 const newUsername = event.target.value.trim();
                 if (newUsername) {
                     const userId = localStorage.getItem('userId');
-                    await database.updateDocument(
-                        '67ed2a13003e4a7f3cf6',
-                        '67ee9da70025aa03c173',
-                        userId,
-                        { username: newUsername }
-                    );
-                    document.getElementById('userUsername').textContent = '@' + newUsername;
-                    event.target.style.display = 'none';
+                    try {
+                        await database.updateDocument(
+                            '67ed2a13003e4a7f3cf6',
+                            '67ee9da70025aa03c173',
+                            userId,
+                            { username: newUsername }
+                        );
+                        document.getElementById('userUsername').textContent = '@' + newUsername;
+                        event.target.style.display = 'none';
+                    } catch (error) {
+                        console.error('Error updating username:', error);
+                        alert('Failed to update username: ' + error.message);
+                    }
                 } else {
                     alert('Username cannot be empty');
                 }
