@@ -136,7 +136,7 @@
             <a href="profile.html">Profile</a>
             <a href="home.html">Home</a>
         </div>
-        <img id="userProfilePic" class="profile-pic" alt="Profile Picture">
+        <img id="recipientProfilePic" class="profile-pic" alt="Recipient Profile Picture">
         <div class="chat-title">
             <h2 id="recipientUsername"></h2>
         </div>
@@ -196,16 +196,16 @@
                 recipientUsername = recipient.username;
                 document.getElementById('recipientUsername').textContent = `@${recipientUsername}`;
 
-                // Load the current user's profile picture
+                // Load the recipient's profile picture
                 let profilePicUrl = defaultDP;
-                if (currentUser.profilepicture && currentUser.profilepicture !== defaultDP) {
-                    if (currentUser.profilepicture.startsWith('http')) {
-                        profilePicUrl = currentUser.profilepicture;
+                if (recipient.profilepicture && recipient.profilepicture !== defaultDP) {
+                    if (recipient.profilepicture.startsWith('http')) {
+                        profilePicUrl = recipient.profilepicture;
                     } else {
-                        profilePicUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${currentUser.profilepicture}/view?project=${client.config.project}`;
+                        profilePicUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${recipient.profilepicture}/view?project=${client.config.project}`;
                     }
                 }
-                document.getElementById('userProfilePic').src = profilePicUrl;
+                document.getElementById('recipientProfilePic').src = profilePicUrl;
 
                 await loadChatHistory();
                 subscribeToMessages();
@@ -219,7 +219,7 @@
             try {
                 const response = await database.listDocuments(
                     '67ed2a13003e4a7f3cf6',
-                    'messages',
+                    '67ef778a000d39f89fd4', // Replace with your actual messages collection ID
                     [
                         Appwrite.Query.or([
                             Appwrite.Query.and([
@@ -272,7 +272,7 @@
                 console.log('Sending message:', content);
                 const response = await database.createDocument(
                     '67ed2a13003e4a7f3cf6',
-                    'messages',
+                    '67ef778a000d39f89fd4', // Replace with your actual messages collection ID
                     Appwrite.ID.unique(),
                     {
                         senderId: currentUserId,
@@ -292,7 +292,7 @@
 
         function subscribeToMessages() {
             client.subscribe(
-                `databases.67ed2a13003e4a7f3cf6.collections.messages.documents`,
+                `databases.67ed2a13003e4a7f3cf6.collections.67ef778a000d39f89fd4.documents`, // Replace with your actual messages collection ID
                 (response) => {
                     const message = response.payload;
                     if (
