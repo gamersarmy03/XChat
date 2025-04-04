@@ -51,21 +51,22 @@
         const account = new Appwrite.Account(client);
         const database = new Appwrite.Databases(client);
 
-        function handleCredentialResponse(response) {
+        async function handleCredentialResponse(response) {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
                 const credential = response.credential;
+
+                // Create an Appwrite session using the Google ID token
+                await account.createSession('google', credential);
+
                 const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                checkAndCreateUser(payload).then(() => {
-                    window.location.href = 'home.html';
-                }).catch(error => {
-                    showError('Sign-in failed: ' + error.message);
-                });
-
+                await checkAndCreateUser(payload);
+                window.location.href = 'home.html';
             } catch (error) {
+                console.error('Sign-in error:', error);
                 showError('Sign-in failed: ' + error.message);
             } finally {
                 document.getElementById('loading').style.display = 'none';
@@ -82,15 +83,35 @@
                 );
             } catch (error) {
                 if (error.code === 404) {
+                    let baseUsername = payload.email.split('@')[0].toLowerCase();
+                    let username = baseUsername;
+                    let isUnique = false;
+                    let counter = 1;
+
+                    while (!isUnique) {
+                        const response = await database.listDocuments(
+                            '67ed2a13003e4a7f3cf6',
+                            '67ee9da70025aa03c173',
+                            [Appwrite.Query.equal('username', username)]
+                        );
+
+                        if (response.documents.length === 0) {
+                            isUnique = true;
+                        } else {
+                            username = `${baseUsername}${counter}`;
+                            counter++;
+                        }
+                    }
+
                     await database.createDocument(
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
                         userId,
                         {
                             name: payload.name,
-                            username: payload.email.split('@')[0],
+                            username: username,
                             email: payload.email,
-                            profilepicture: payload.picture // Store the Google URL directly
+                            profilepicture: payload.picture
                         }
                     );
                 } else {
