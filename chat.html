@@ -131,7 +131,6 @@
                     return;
                 }
 
-                // Get the recipient ID from the URL
                 const urlParams = new URLSearchParams(window.location.search);
                 recipientId = urlParams.get('recipientId');
                 if (!recipientId) {
@@ -139,7 +138,6 @@
                     return;
                 }
 
-                // Get current user and recipient details
                 currentUser = await database.getDocument(
                     '67ed2a13003e4a7f3cf6',
                     '67ee9da70025aa03c173',
@@ -153,10 +151,7 @@
                 recipientUsername = recipient.username;
                 document.getElementById('recipientUsername').textContent = `@${recipientUsername}`;
 
-                // Load chat history
                 await loadChatHistory();
-
-                // Subscribe to real-time messages
                 subscribeToMessages();
             } catch (error) {
                 console.error('Error loading chat:', error);
@@ -208,13 +203,19 @@
         }
 
         async function sendMessage(event) {
-            if (event && event.key !== 'Enter') return;
+            // Handle both button click and Enter keypress
+            if (event && event.type === 'keyup' && event.key !== 'Enter') return;
+
             const messageInput = document.getElementById('messageInput');
             const content = messageInput.value.trim();
-            if (!content) return;
+            if (!content) {
+                alert('Please enter a message.');
+                return;
+            }
 
             try {
-                await database.createDocument(
+                console.log('Sending message:', content); // Debug
+                const response = await database.createDocument(
                     '67ed2a13003e4a7f3cf6',
                     'messages',
                     Appwrite.ID.unique(),
@@ -226,9 +227,11 @@
                         timestamp: new Date().toISOString()
                     }
                 );
+                console.log('Message sent successfully:', response); // Debug
                 messageInput.value = '';
             } catch (error) {
                 console.error('Error sending message:', error);
+                alert('Failed to send message: ' + error.message);
             }
         }
 
