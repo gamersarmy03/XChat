@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login - XChit</title>
     <style>
         body {
             background-color: #000000;
@@ -67,11 +67,10 @@
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                // Initiate OAuth2 login with Google
                 await account.createOAuth2Session(
                     'google',
-                    window.location.origin + '/home.html', // Success redirect URL
-                    window.location.origin + '/index.html' // Failure redirect URL
+                    window.location.origin + '/home.html',
+                    window.location.origin + '/index.html'
                 );
             } catch (error) {
                 console.error('Login error:', error);
@@ -85,11 +84,9 @@
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                // Get the authenticated user
                 const user = await account.get();
                 const userId = user.$id;
 
-                // Check if the user exists in the database
                 try {
                     await database.getDocument(
                         '67ed2a13003e4a7f3cf6',
@@ -98,7 +95,6 @@
                     );
                 } catch (error) {
                     if (error.code === 404) {
-                        // User doesn't exist, create a new document
                         let baseUsername = user.email.split('@')[0].toLowerCase();
                         let username = baseUsername;
                         let isUnique = false;
@@ -127,7 +123,7 @@
                                 name: user.name,
                                 username: username,
                                 email: user.email,
-                                profilepicture: user.prefs?.picture || '' // Use Google profile picture if available
+                                profilepicture: user.prefs?.picture || ''
                             }
                         );
                     } else {
@@ -153,15 +149,12 @@
 
         window.onload = async function() {
             try {
-                // Check if the user is already logged in
                 await account.get();
-                // If the user is logged in, handle post-login logic
                 await handlePostLogin();
             } catch (error) {
-                // If the user is not logged in, do nothing (stay on login page)
                 console.log('User not logged in, waiting for login action.');
             }
         };
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92adbadb2f11458f',t:'MTc0MzczNzQ1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
