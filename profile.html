@@ -56,10 +56,10 @@
             margin-right: 5px;
         }
         #usernameInput {
-            width: 180px; /* Adjusted to account for prefix */
+            width: 180px;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="profile-container">
@@ -83,46 +83,34 @@
     </div>
 
     <script>
-        const { Client, Account, Databases } = Appwrite;
-        const client = new Client()
+        const client = new Appwrite.Client()
             .setEndpoint('https://cloud.appwrite.io/v1')
             .setProject('67ed2822002be4a5e417');
-        const account = new Account(client);
-        const databases = new Databases(client);
 
+        const database = new Appwrite.Databases(client);
         const defaultDP = 'defaultdp.png';
 
         window.onload = async function() {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            if (!userData) {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
                 window.location.href = 'index.html';
                 return;
             }
 
-            // Sync with Appwrite database
-            const syncedData = await getUserProfile(userData.userId);
-            localStorage.setItem('userData', JSON.stringify(syncedData));
-
-            document.getElementById('profilePic').src = syncedData.customDP || defaultDP;
-            document.getElementById('userName').textContent = syncedData.name;
-            document.getElementById('userEmail').textContent = syncedData.email;
-            document.getElementById('userUsername').textContent = '@' + syncedData.customUsername;
-        };
-
-        async function getUserProfile(userId) {
-            return await databases.getDocument('67ee04300014f5069e03', 'users', userId);
-        }
-
-        async function updateUserProfile(updates) {
-            const userData = JSON.parse(localStorage.getItem('userData'));
-            await databases.updateDocument(
-                '67ee04300014f5069e03',
-                'users',
-                userData.userId,
-                updates
-            );
-            const updatedData = { ...userData, ...updates };
-            localStorage.setItem('userData', JSON.stringify(updatedData));
+            try {
+                const user = await database.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId
+                );
+                document.getElementById('profilePic').src = user.profilepicture || defaultDP;
+                document.getElementById('userName').textContent = user.name;
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('userUsername').textContent = '@' + user.username;
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                window.location.href = 'index.html';
+            }
         }
 
         function changeDP() {
@@ -134,16 +122,27 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = async function(e) {
-                    const customDP = e.target.result;
-                    await updateUserProfile({ customDP });
-                    document.getElementById('profilePic').src = customDP;
+                    const userId = localStorage.getItem('userId');
+                    await database.updateDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId,
+                        { profilepicture: e.target.result }
+                    );
+                    document.getElementById('profilePic').src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             }
         }
 
         async function removeDP() {
-            await updateUserProfile({ customDP: defaultDP });
+            const userId = localStorage.getItem('userId');
+            await database.updateDocument(
+                '67ed2a13003e4a7f3cf6',
+                '67ee9da70025aa03c173',
+                userId,
+                { profilepicture: defaultDP }
+            );
             document.getElementById('profilePic').src = defaultDP;
         }
 
@@ -160,7 +159,13 @@
             if (event.key === 'Enter') {
                 const newName = event.target.value.trim();
                 if (newName) {
-                    await updateUserProfile({ name: newName });
+                    const userId = localStorage.getItem('userId');
+                    await database.updateDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId,
+                        { name: newName }
+                    );
                     document.getElementById('userName').textContent = newName;
                     event.target.style.display = 'none';
                 }
@@ -181,7 +186,13 @@
             if (event.key === 'Enter') {
                 const newUsername = event.target.value.trim();
                 if (newUsername) {
-                    await updateUserProfile({ customUsername: newUsername });
+                    const userId = localStorage.getItem('userId');
+                    await database.updateDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId,
+                        { username: newUsername }
+                    );
                     document.getElementById('userUsername').textContent = '@' + newUsername;
                     event.target.style.display = 'none';
                 } else {
@@ -190,11 +201,10 @@
             }
         }
 
-        async function signOut() {
-            await account.deleteSession('current');
-            localStorage.removeItem('userData');
+        function signOut() {
+            localStorage.removeItem('userId');
             window.location.href = 'index.html';
         }
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92adbadb3fb96760',t:'MTc0MzczNzQ1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
