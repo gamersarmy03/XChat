@@ -64,11 +64,40 @@
             padding: 5px;
             width: 200px;
         }
+        .suggestions {
+            position: absolute;
+            top: 80px;
+            right: 0;
+            background-color: #333;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            width: 200px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+        .suggestion-item {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .suggestion-item:hover {
+            background-color: #555;
+        }
         .content {
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
+        }
+        .message-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
@@ -84,11 +113,13 @@
                 <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
             </svg>
             <input type="text" class="search-input" id="searchInput" placeholder="Search @users or chats" onkeyup="search(event)">
+            <div class="suggestions" id="suggestions"></div>
         </div>
     </div>
     <div class="content" id="content">
         <h1>Welcome to XChit</h1>
     </div>
+    <div class="message-notification" id="messageNotification"></div>
 
     <script>
         const client = new Appwrite.Client()
@@ -98,12 +129,13 @@
         const account = new Appwrite.Account(client);
         const database = new Appwrite.Databases(client);
 
+        let currentUserId;
+
         window.onload = async function() {
             try {
-                // Verify the user is logged in
                 await account.get();
-                const userId = localStorage.getItem('userId');
-                if (!userId) {
+                currentUserId = localStorage.getItem('userId');
+                if (!currentUserId) {
                     window.location.href = 'index.html';
                     return;
                 }
@@ -111,8 +143,11 @@
                 await database.getDocument(
                     '67ed2a13003e4a7f3cf6',
                     '67ee9da70025aa03c173',
-                    userId
+                    currentUserId
                 );
+
+                // Subscribe to real-time messages
+                subscribeToMessages();
             } catch (error) {
                 console.error('Error loading user data:', error);
                 window.location.href = 'index.html';
@@ -123,24 +158,78 @@
             const menu = document.getElementById('menu');
             menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
             document.getElementById('searchInput').style.display = 'none';
+            document.getElementById('suggestions').style.display = 'none';
         }
 
         function toggleSearch() {
             const searchInput = document.getElementById('searchInput');
             searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
             document.getElementById('menu').style.display = 'none';
+            document.getElementById('suggestions').style.display = 'none';
             if (searchInput.style.display === 'block') {
                 searchInput.focus();
             }
         }
 
-        function search(event) {
+        async function search(event) {
             const query = event.target.value.trim();
+            const suggestions = document.getElementById('suggestions');
+
+            if (query.startsWith('@') && query.length > 1) {
+                const searchTerm = query.slice(1).toLowerCase();
+                try {
+                    const response = await database.listDocuments(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        [
+                            Appwrite.Query.search('username', searchTerm),
+                            Appwrite.Query.notEqual('$id', currentUserId)
+                        ]
+                    );
+
+                    suggestions.innerHTML = '';
+                    if (response.documents.length > 0) {
+                        response.documents.forEach(user => {
+                            const suggestionItem = document.createElement('div');
+                            suggestionItem.className = 'suggestion-item';
+                            suggestionItem.textContent = `@${user.username}`;
+                            suggestionItem.onclick = () => {
+                                window.location.href = `chat.html?recipientId=${user.$id}`;
+                            };
+                            suggestions.appendChild(suggestionItem);
+                        });
+                        suggestions.style.display = 'block';
+                    } else {
+                        suggestions.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error searching users:', error);
+                }
+            } else {
+                suggestions.style.display = 'none';
+            }
+
             if (event.key === 'Enter' && query) {
-                console.log('Searching for:', query);
                 event.target.value = '';
                 toggleSearch();
             }
+        }
+
+        function subscribeToMessages() {
+            client.subscribe(
+                `databases.67ed2a13003e4a7f3cf6.collections.messages.documents`,
+                (response) => {
+                    const message = response.payload;
+                    if (message.recipientId === currentUserId) {
+                        const notification = document.getElementById('messageNotification');
+                        notification.textContent = `New message from @${message.senderUsername}: ${message.content}`;
+                        notification.style.display = 'block';
+                        setTimeout(() => {
+                            notification.style.display = 'none';
+                        }, 5000);
+                    }
+                }
+            );
         }
 
         document.addEventListener('click', function(event) {
@@ -152,8 +241,9 @@
             }
             if (!searchContainer.contains(event.target) && event.target !== document.getElementById('searchInput')) {
                 document.getElementById('searchInput').style.display = 'none';
+                document.getElementById('suggestions').style.display = 'none';
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92adbadb3beabff2',t:'MTc0MzczNzQ1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
