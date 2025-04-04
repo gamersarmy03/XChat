@@ -22,33 +22,12 @@
             align-items: center;
             background-color: #333;
         }
-        .hamburger {
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .menu {
-            display: none;
-            position: absolute;
-            top: 40px;
-            left: 10px;
-            background-color: #333;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .menu a {
-            color: #ffffff;
-            text-decoration: none;
-            display: block;
-            margin: 10px 0;
-        }
-        .menu a:hover {
-            color: #cccccc;
-        }
         .profile-pic {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             margin-right: 10px;
+            cursor: pointer;
         }
         .chat-title {
             flex: 1;
@@ -56,6 +35,7 @@
         }
         .chat-title h2 {
             margin: 0;
+            cursor: pointer;
         }
         .search-container {
             position: relative;
@@ -131,14 +111,9 @@
 </head>
 <body>
     <div class="header">
-        <div class="hamburger" onclick="toggleMenu()">☰</div>
-        <div class="menu" id="menu">
-            <a href="profile.html">Profile</a>
-            <a href="home.html">Home</a>
-        </div>
-        <img id="recipientProfilePic" class="profile-pic" alt="Recipient Profile Picture">
+        <img id="recipientProfilePic" class="profile-pic" alt="Recipient Profile Picture" onclick="viewUserProfile()">
         <div class="chat-title">
-            <h2 id="recipientUsername"></h2>
+            <h2 id="recipientUsername" onclick="viewUserProfile()"></h2>
         </div>
         <div class="search-container">
             <svg class="search-icon" onclick="goToSearch()" viewBox="0 0 24 24">
@@ -162,7 +137,7 @@
         const account = new Appwrite.Account(client);
         const database = new Appwrite.Databases(client);
         const storage = new Appwrite.Storage(client);
-        const bucketId = '67ef59d4002282002e07'; // Replace with your bucket ID
+        const bucketId = '67ef59d4002282002e07';
         const defaultDP = 'defaultdp.png';
 
         let currentUserId, recipientId, recipientUsername, currentUser;
@@ -196,7 +171,6 @@
                 recipientUsername = recipient.username;
                 document.getElementById('recipientUsername').textContent = `@${recipientUsername}`;
 
-                // Load the recipient's profile picture
                 let profilePicUrl = defaultDP;
                 if (recipient.profilepicture && recipient.profilepicture !== defaultDP) {
                     if (recipient.profilepicture.startsWith('http')) {
@@ -219,7 +193,7 @@
             try {
                 const response = await database.listDocuments(
                     '67ed2a13003e4a7f3cf6',
-                    '67ef778a000d39f89fd4', // Replace with your actual messages collection ID
+                    '67ef778a000d39f89fd4',
                     [
                         Appwrite.Query.or([
                             Appwrite.Query.and([
@@ -272,7 +246,7 @@
                 console.log('Sending message:', content);
                 const response = await database.createDocument(
                     '67ed2a13003e4a7f3cf6',
-                    '67ef778a000d39f89fd4', // Replace with your actual messages collection ID
+                    '67ef778a000d39f89fd4',
                     Appwrite.ID.unique(),
                     {
                         senderId: currentUserId,
@@ -292,7 +266,7 @@
 
         function subscribeToMessages() {
             client.subscribe(
-                `databases.67ed2a13003e4a7f3cf6.collections.67ef778a000d39f89fd4.documents`, // Replace with your actual messages collection ID
+                `databases.67ed2a13003e4a7f3cf6.collections.67ef778a000d39f89fd4.documents`,
                 (response) => {
                     const message = response.payload;
                     if (
@@ -311,22 +285,13 @@
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        function toggleMenu() {
-            const menu = document.getElementById('menu');
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        function viewUserProfile() {
+            window.location.href = `user.html?userId=${recipientId}`;
         }
 
         function goToSearch() {
             window.location.href = 'home.html';
         }
-
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('menu');
-            const hamburger = document.getElementsByClassName('hamburger')[0];
-            if (!menu.contains(event.target) && !hamburger.contains(event.target)) {
-                menu.style.display = 'none';
-            }
-        });
     </script>
 </body>
 </html>
