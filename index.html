@@ -31,14 +31,25 @@
             margin-top: 20px;
             display: none;
         }
+        .login-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .login-btn:hover {
+            background-color: #cccccc;
+        }
     </style>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
+        <button class="login-btn" onclick="loginWithGoogle()">Sign in with Google</button>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
@@ -51,74 +62,87 @@
         const account = new Appwrite.Account(client);
         const database = new Appwrite.Databases(client);
 
-        async function handleCredentialResponse(response) {
+        async function loginWithGoogle() {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
-                const credential = response.credential;
-
-                // Create an Appwrite session using the Google ID token
-                await account.createSession('google', credential);
-
-                const payload = JSON.parse(atob(credential.split('.')[1]));
-
-                await checkAndCreateUser(payload);
-                window.location.href = 'home.html';
+                // Initiate OAuth2 login with Google
+                await account.createOAuth2Session(
+                    'google',
+                    window.location.origin + '/home.html', // Success redirect URL
+                    window.location.origin + '/index.html' // Failure redirect URL
+                );
             } catch (error) {
-                console.error('Sign-in error:', error);
-                showError('Sign-in failed: ' + error.message);
-            } finally {
+                console.error('Login error:', error);
+                showError('Login failed: ' + error.message);
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
-        async function checkAndCreateUser(payload) {
-            const userId = payload.sub;
+        async function handlePostLogin() {
             try {
-                await database.getDocument(
-                    '67ed2a13003e4a7f3cf6',
-                    '67ee9da70025aa03c173',
-                    userId
-                );
-            } catch (error) {
-                if (error.code === 404) {
-                    let baseUsername = payload.email.split('@')[0].toLowerCase();
-                    let username = baseUsername;
-                    let isUnique = false;
-                    let counter = 1;
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
 
-                    while (!isUnique) {
-                        const response = await database.listDocuments(
-                            '67ed2a13003e4a7f3cf6',
-                            '67ee9da70025aa03c173',
-                            [Appwrite.Query.equal('username', username)]
-                        );
+                // Get the authenticated user
+                const user = await account.get();
+                const userId = user.$id;
 
-                        if (response.documents.length === 0) {
-                            isUnique = true;
-                        } else {
-                            username = `${baseUsername}${counter}`;
-                            counter++;
-                        }
-                    }
-
-                    await database.createDocument(
+                // Check if the user exists in the database
+                try {
+                    await database.getDocument(
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
-                        userId,
-                        {
-                            name: payload.name,
-                            username: username,
-                            email: payload.email,
-                            profilepicture: payload.picture
-                        }
+                        userId
                     );
-                } else {
-                    throw error;
+                } catch (error) {
+                    if (error.code === 404) {
+                        // User doesn't exist, create a new document
+                        let baseUsername = user.email.split('@')[0].toLowerCase();
+                        let username = baseUsername;
+                        let isUnique = false;
+                        let counter = 1;
+
+                        while (!isUnique) {
+                            const response = await database.listDocuments(
+                                '67ed2a13003e4a7f3cf6',
+                                '67ee9da70025aa03c173',
+                                [Appwrite.Query.equal('username', username)]
+                            );
+
+                            if (response.documents.length === 0) {
+                                isUnique = true;
+                            } else {
+                                username = `${baseUsername}${counter}`;
+                                counter++;
+                            }
+                        }
+
+                        await database.createDocument(
+                            '67ed2a13003e4a7f3cf6',
+                            '67ee9da70025aa03c173',
+                            userId,
+                            {
+                                name: user.name,
+                                username: username,
+                                email: user.email,
+                                profilepicture: user.prefs?.picture || '' // Use Google profile picture if available
+                            }
+                        );
+                    } else {
+                        throw error;
+                    }
                 }
+
+                localStorage.setItem('userId', userId);
+                window.location.href = 'home.html';
+            } catch (error) {
+                console.error('Post-login error:', error);
+                showError('Sign-in failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
             }
-            localStorage.setItem('userId', userId);
         }
 
         function showError(message) {
@@ -127,19 +151,16 @@
             errorDiv.style.display = 'block';
         }
 
-        window.onload = function() {
-            google.accounts.id.initialize({
-                client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
-                callback: handleCredentialResponse,
-                auto_select: true
-            });
-
-            google.accounts.id.renderButton(
-                document.getElementById('g_id_signin'),
-                { theme: 'outline', size: 'large' }
-            );
-
-            google.accounts.id.prompt();
+        window.onload = async function() {
+            try {
+                // Check if the user is already logged in
+                await account.get();
+                // If the user is logged in, handle post-login logic
+                await handlePostLogin();
+            } catch (error) {
+                // If the user is not logged in, do nothing (stay on login page)
+                console.log('User not logged in, waiting for login action.');
+            }
         };
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92adbadb2f11458f',t:'MTc0MzczNzQ1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
