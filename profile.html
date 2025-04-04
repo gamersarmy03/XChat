@@ -106,14 +106,11 @@
                     userId
                 );
 
-                // If profilepicture is a file ID, get the file URL; otherwise, use it directly
                 let profilePicUrl = defaultDP;
                 if (user.profilepicture && user.profilepicture !== defaultDP) {
                     if (user.profilepicture.startsWith('http')) {
-                        // If it's a URL (e.g., Google profile picture), use it directly
                         profilePicUrl = user.profilepicture;
                     } else {
-                        // If it's a file ID, get the file URL from storage
                         profilePicUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${user.profilepicture}/view?project=${client.config.project}`;
                     }
                 }
@@ -147,14 +144,27 @@
                     return;
                 }
 
-                // Upload the file to Appwrite storage
+                const user = await database.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId
+                );
+
+                if (user.profilepicture && user.profilepicture !== defaultDP && !user.profilepicture.startsWith('http')) {
+                    try {
+                        await storage.deleteFile(bucketId, user.profilepicture);
+                        console.log('Old DP deleted successfully');
+                    } catch (error) {
+                        console.warn('Could not delete old DP:', error);
+                    }
+                }
+
                 const response = await storage.createFile(
                     bucketId,
                     Appwrite.ID.unique(),
                     file
                 );
 
-                // Update the user's profilepicture field with the file ID
                 await database.updateDocument(
                     '67ed2a13003e4a7f3cf6',
                     '67ee9da70025aa03c173',
@@ -162,7 +172,6 @@
                     { profilepicture: response.$id }
                 );
 
-                // Update UI with the new file URL
                 const fileUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${response.$id}/view?project=${client.config.project}`;
                 document.getElementById('profilePic').src = fileUrl;
                 console.log('Profile picture updated successfully');
@@ -175,6 +184,21 @@
         async function removeDP() {
             const userId = localStorage.getItem('userId');
             try {
+                const user = await database.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId
+                );
+
+                if (user.profilepicture && user.profilepicture !== defaultDP && !user.profilepicture.startsWith('http')) {
+                    try {
+                        await storage.deleteFile(bucketId, user.profilepicture);
+                        console.log('Old DP deleted successfully');
+                    } catch (error) {
+                        console.warn('Could not delete old DP:', error);
+                    }
+                }
+
                 await database.updateDocument(
                     '67ed2a13003e4a7f3cf6',
                     '67ee9da70025aa03c173',
@@ -232,23 +256,43 @@
         async function updateUsername(event) {
             if (event.key === 'Enter') {
                 const newUsername = event.target.value.trim();
-                if (newUsername) {
-                    const userId = localStorage.getItem('userId');
-                    try {
-                        await database.updateDocument(
-                            '67ed2a13003e4a7f3cf6',
-                            '67ee9da70025aa03c173',
-                            userId,
-                            { username: newUsername }
-                        );
-                        document.getElementById('userUsername').textContent = '@' + newUsername;
-                        event.target.style.display = 'none';
-                    } catch (error) {
-                        console.error('Error updating username:', error);
-                        alert('Failed to update username: ' + error.message);
-                    }
-                } else {
+                if (!newUsername) {
                     alert('Username cannot be empty');
+                    return;
+                }
+
+                const userId = localStorage.getItem('userId');
+                try {
+                    // Check if the new username is already taken by another user
+                    const response = await database.listDocuments(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        [
+                            Appwrite.Query.equal('username', newUsername),
+                            Appwrite.Query.notEqual('$id', userId) // Exclude the current user
+                        ]
+                    );
+
+                    if (response.documents.length > 0) {
+                        // Username is already taken
+                        alert('Username "' + newUsername + '" is already taken. Please choose a different username.');
+                        return;
+                    }
+
+                    // If username is available, proceed with the update
+                    await database.updateDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId,
+                        { username: newUsername }
+                    );
+
+                    document.getElementById('userUsername').textContent = '@' + newUsername;
+                    event.target.style.display = 'none';
+                    alert('Username updated successfully!');
+                } catch (error) {
+                    console.error('Error updating username:', error);
+                    alert('Failed to update username: ' + error.message);
                 }
             }
         }
