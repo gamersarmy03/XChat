@@ -31,135 +31,95 @@
             margin-top: 20px;
             display: none;
         }
-        .login-form input {
-            display: block;
-            margin: 10px auto;
-            padding: 5px;
-            background-color: #333;
-            color: #fff;
-            border: 1px solid #fff;
-            border-radius: 5px;
-            width: 200px;
-        }
-        .login-form button {
-            padding: 5px 10px;
-            background-color: #fff;
-            color: #000;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .login-form button:hover {
-            background-color: #ccc;
-        }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1/dist/appwrite.min.js" defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
-        <div class="login-form">
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="login()">Login</button>
-            <button onclick="register()">Register</button>
-        </div>
+        <div id="g_id_signin" data-type="standard" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-width="250"></div>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
 
     <script>
-        // Wait for the Appwrite SDK to load
-        window.addEventListener('load', function() {
-            // Initialize Appwrite client
-            const client = new Appwrite.Client()
-                .setEndpoint('https://cloud.appwrite.io/v1')
-                .setProject('67ed2822002be4a5e417'); // Your project ID
+        const client = new Appwrite.Client()
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('67ed2822002be4a5e417');
 
-            const account = new Appwrite.Account(client);
-            const databases = new Appwrite.Databases(client);
+        const account = new Appwrite.Account(client);
+        const database = new Appwrite.Databases(client);
 
-            // Expose functions to the global scope
-            window.login = async function() {
-                try {
-                    document.getElementById('loading').style.display = 'block';
-                    document.getElementById('error').style.display = 'none';
+        function handleCredentialResponse(response) {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
 
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
+                const credential = response.credential;
+                const payload = JSON.parse(atob(credential.split('.')[1]));
 
-                    // Log in with Appwrite
-                    const session = await account.createEmailPasswordSession(email, password);
-
-                    // Fetch user profile from the database
-                    const userId = session.userId;
-                    const userData = await getUserProfile(userId);
-
-                    // Store user data in localStorage for quick access
-                    localStorage.setItem('userData', JSON.stringify(userData));
+                checkAndCreateUser(payload).then(() => {
                     window.location.href = 'home.html';
-                } catch (error) {
-                    showError('Login failed: ' + error.message);
-                } finally {
-                    document.getElementById('loading').style.display = 'none';
-                }
-            };
+                }).catch(error => {
+                    showError('Sign-in failed: ' + error.message);
+                });
 
-            window.register = async function() {
-                try {
-                    document.getElementById('loading').style.display = 'block';
-                    document.getElementById('error').style.display = 'none';
+            } catch (error) {
+                showError('Sign-in failed: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
 
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-
-                    // Register a new user
-                    const user = await account.create('unique()', email, password);
-                    await account.createEmailPasswordSession(email, password); // Auto-login after registration
-
-                    // Create a user profile in the database
-                    const userData = {
-                        userId: user.$id,
-                        name: email.split('@')[0], // Default name
-                        email: email,
-                        customDP: 'defaultdp.png', // Default DP
-                        customUsername: email.split('@')[0] // Default username
-                    };
-                    await databases.createDocument(
-                        '67ee04300014f5069e03', // Database ID
-                        'users', // Collection ID (replace if different)
-                        user.$id, // Document ID
-                        userData
+        async function checkAndCreateUser(payload) {
+            const userId = payload.sub;
+            try {
+                await database.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId
+                );
+            } catch (error) {
+                if (error.code === 404) {
+                    await database.createDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId,
+                        {
+                            name: payload.name,
+                            username: payload.email.split('@')[0],
+                            email: payload.email,
+                            profilepicture: payload.picture
+                        }
                     );
-
-                    localStorage.setItem('userData', JSON.stringify(userData));
-                    window.location.href = 'home.html';
-                } catch (error) {
-                    showError('Registration failed: ' + error.message);
-                } finally {
-                    document.getElementById('loading').style.display = 'none';
-                }
-            };
-
-            async function getUserProfile(userId) {
-                try {
-                    const response = await databases.getDocument(
-                        '67ee04300014f5069e03', // Database ID
-                        '67ee9da70025aa03c173', // Collection ID (replace if different)
-                        userId
-                    );
-                    return response;
-                } catch (error) {
-                    throw new Error('Failed to fetch user profile: ' + error.message);
+                } else {
+                    throw error;
                 }
             }
+            localStorage.setItem('userId', userId);
+        }
 
-            function showError(message) {
-                const errorDiv = document.getElementById('error');
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            }
-        });
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        window.onload = function() {
+            google.accounts.id.initialize({
+                client_id: '917239533191-8j60nfkadvv6osiabkvdqufqr7vcml61.apps.googleusercontent.com',
+                callback: handleCredentialResponse,
+                auto_select: true
+            });
+
+            google.accounts.id.renderButton(
+                document.getElementById('g_id_signin'),
+                { theme: 'outline', size: 'large' }
+            );
+
+            google.accounts.id.prompt();
+        };
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92adbadb2f11458f',t:'MTc0MzczNzQ1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
