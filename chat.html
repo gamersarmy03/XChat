@@ -14,33 +14,63 @@
             display: flex;
             flex-direction: column;
         }
+        .header {
+            padding: 10px;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+        }
+        .hamburger {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .menu {
+            display: none;
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .menu a {
+            color: #ffffff;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+        }
+        .menu a:hover {
+            color: #cccccc;
+        }
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .chat-title {
+            flex: 1;
+            text-align: center;
+        }
+        .chat-title h2 {
+            margin: 0;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-icon {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            fill: #ffffff;
+        }
         .chat-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             padding: 10px;
-        }
-        .chat-header {
-            padding: 10px;
-            background-color: #333;
-            border-bottom: 1px solid #ffffff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .chat-header h2 {
-            margin: 0;
-        }
-        .back-btn {
-            background-color: #ffffff;
-            color: #000000;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .back-btn:hover {
-            background-color: #cccccc;
         }
         .chat-history {
             flex: 1;
@@ -100,11 +130,23 @@
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h2 id="recipientUsername"></h2>
-            <button class="back-btn" onclick="goBack()">Back</button>
+    <div class="header">
+        <div class="hamburger" onclick="toggleMenu()">☰</div>
+        <div class="menu" id="menu">
+            <a href="profile.html">Profile</a>
+            <a href="home.html">Home</a>
         </div>
+        <img id="userProfilePic" class="profile-pic" alt="Profile Picture">
+        <div class="chat-title">
+            <h2 id="recipientUsername"></h2>
+        </div>
+        <div class="search-container">
+            <svg class="search-icon" onclick="goToSearch()" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+        </div>
+    </div>
+    <div class="chat-container">
         <div class="chat-history" id="chatHistory"></div>
         <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Type a message..." onkeyup="sendMessage(event)">
@@ -119,6 +161,9 @@
 
         const account = new Appwrite.Account(client);
         const database = new Appwrite.Databases(client);
+        const storage = new Appwrite.Storage(client);
+        const bucketId = '67ef59d4002282002e07'; // Replace with your bucket ID
+        const defaultDP = 'defaultdp.png';
 
         let currentUserId, recipientId, recipientUsername, currentUser;
 
@@ -150,6 +195,17 @@
                 );
                 recipientUsername = recipient.username;
                 document.getElementById('recipientUsername').textContent = `@${recipientUsername}`;
+
+                // Load the current user's profile picture
+                let profilePicUrl = defaultDP;
+                if (currentUser.profilepicture && currentUser.profilepicture !== defaultDP) {
+                    if (currentUser.profilepicture.startsWith('http')) {
+                        profilePicUrl = currentUser.profilepicture;
+                    } else {
+                        profilePicUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${currentUser.profilepicture}/view?project=${client.config.project}`;
+                    }
+                }
+                document.getElementById('userProfilePic').src = profilePicUrl;
 
                 await loadChatHistory();
                 subscribeToMessages();
@@ -203,7 +259,6 @@
         }
 
         async function sendMessage(event) {
-            // Handle both button click and Enter keypress
             if (event && event.type === 'keyup' && event.key !== 'Enter') return;
 
             const messageInput = document.getElementById('messageInput');
@@ -214,7 +269,7 @@
             }
 
             try {
-                console.log('Sending message:', content); // Debug
+                console.log('Sending message:', content);
                 const response = await database.createDocument(
                     '67ed2a13003e4a7f3cf6',
                     'messages',
@@ -227,7 +282,7 @@
                         timestamp: new Date().toISOString()
                     }
                 );
-                console.log('Message sent successfully:', response); // Debug
+                console.log('Message sent successfully:', response);
                 messageInput.value = '';
             } catch (error) {
                 console.error('Error sending message:', error);
@@ -256,9 +311,22 @@
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        function goBack() {
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function goToSearch() {
             window.location.href = 'home.html';
         }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('menu');
+            const hamburger = document.getElementsByClassName('hamburger')[0];
+            if (!menu.contains(event.target) && !hamburger.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>
