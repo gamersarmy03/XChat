@@ -16,11 +16,12 @@
             flex-direction: column;
         }
         .header {
-            padding: 10px; /* Matches home.html compactness */
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             background-color: #000000;
+            position: relative; /* Ensure positioning context */
         }
         .profile-container {
             display: flex;
@@ -28,18 +29,19 @@
             cursor: pointer;
         }
         .profile-pic {
-            width: 30px; /* Smaller, like home.html logo */
+            width: 30px;
             height: 30px;
             border-radius: 50%;
-            margin-right: 5px; /* Tight spacing like home.html */
+            margin-right: 5px;
         }
         .chat-title h2 {
             margin: 0;
-            font-size: 18px; /* Matches logo-text size in home.html */
+            font-size: 18px;
             font-weight: normal;
         }
         .menu-container {
-            padding: 5px; /* Compact like search icon in home.html */
+            padding: 5px;
+            position: relative; /* Anchor for absolute positioning */
         }
         .menu-icon {
             font-size: 24px;
@@ -51,7 +53,7 @@
         .menu-options {
             display: none;
             position: absolute;
-            top: 100%;
+            top: calc(100% + 5px); /* Position below the icon with slight offset */
             right: 0;
             background-color: #222;
             border: 1px solid #ffffff;
@@ -59,6 +61,7 @@
             padding: 5px;
             z-index: 1200;
             min-width: 120px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Optional: visual clarity */
         }
         .menu-item {
             padding: 5px 10px;
