@@ -143,14 +143,6 @@
         .modal-btn:hover {
             background-color: var(--hover-color);
         }
-
-        .modal-btn.cancel {
-            background-color: #6c757d;
-        }
-
-        .modal-btn.cancel:hover {
-            background-color: #5a6268;
-        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.2"></script>
 </head>
@@ -178,7 +170,6 @@
             <p id="modalMessage"></p>
             <div class="modal-buttons">
                 <button class="modal-btn" onclick="closeModal(true)">OK</button>
-                <button class="modal-btn cancel" onclick="closeModal(false)">Cancel</button>
             </div>
         </div>
     </div>
@@ -198,14 +189,9 @@
         const modalMessage = document.getElementById('modalMessage');
 
         // Modern Popup Function
-        function showModal(message, hasCancel = true) {
+        function showModal(message) {
             modalMessage.textContent = message;
             modal.style.display = 'flex';
-            if (!hasCancel) {
-                document.querySelector('.modal-buttons .cancel').style.display = 'none';
-            } else {
-                document.querySelector('.modal-buttons .cancel').style.display = 'inline-block';
-            }
         }
 
         function closeModal(action = false) {
@@ -451,5 +437,5 @@
             window.location.href = 'home.html';
         }
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b6954bfca153b7',t:'MTc0MzgzMDI4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
