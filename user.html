@@ -40,7 +40,8 @@
         }
         .profile-info {
             display: flex;
-            flex-direction: column;
+            flex-direction: row; /* Changed to row to align name and username side by side */
+            align-items: center; /* Vertically center the name and username */
         }
         .profile-name {
             margin: 0;
@@ -48,6 +49,7 @@
             color: #ffffff;
             display: inline-flex;
             align-items: center;
+            margin-right: 10px; /* Space between name and username */
         }
         .verified-tick {
             width: 20px;
@@ -57,7 +59,7 @@
         .profile-username {
             color: #555;
             font-size: 16px;
-            margin: 5px 0 0 0;
+            margin: 0; /* Removed top margin since it's now side by side */
         }
         /* Additional styling for other sections (optional) */
         .bio {
