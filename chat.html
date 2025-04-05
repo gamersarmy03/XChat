@@ -9,14 +9,14 @@
         body {
             background-color: #000000;
             color: #ffffff;
-            margin: 0;
+            margin:  Beckham0;
             font-family: Arial, sans-serif;
             height: 100vh;
             display: flex;
             flex-direction: column;
         }
         .header {
-            padding: 10px 15px; /* Added padding on the right */
+            padding: 10px 15px;
             position: relative;
             display: flex;
             justify-content: space-between;
@@ -40,26 +40,28 @@
         }
         .menu-container {
             position: relative;
-            padding: 5px 10px; /* Increased tappable area */
-            margin-right: 5px; /* Moved slightly inward from the edge */
+            padding: 5px 10px;
+            margin-right: 5px;
+            z-index: 1100; /* Ensure it’s above other elements */
         }
         .menu-icon {
             font-size: 24px;
             cursor: pointer;
             color: #ffffff;
-            display: block; /* Ensures it takes up space */
+            display: block;
+            line-height: 1; /* Ensures proper alignment */
         }
         .menu-options {
             display: none;
             position: absolute;
-            top: 35px; /* Adjusted to account for padding */
+            top: 100%; /* Position directly below the icon */
             right: 0;
             background-color: #222;
             border: 1px solid #ffffff;
             border-radius: 5px;
             padding: 5px;
-            z-index: 1000;
-            min-width: 120px; /* Ensures menu is wide enough */
+            z-index: 1200; /* Higher than container for overlap */
+            min-width: 120px;
         }
         .menu-item {
             padding: 5px 10px;
@@ -181,12 +183,12 @@
 </head>
 <body>
     <div class="header">
-        <img id="recipientProfilePic" class="profile-pic" alt="Recipient Profile Picture" onclick="viewUserProfile()">
+        <img id="recipientProfilePic" class="profile-pic" alt="Recipient Profile Picture" onclick="viewUserProfile(event)">
         <div class="chat-title">
-            <h2 id="recipientUsername" onclick="viewUserProfile()"></h2>
+            <h2 id="recipientUsername" onclick="viewUserProfile(event)"></h2>
         </div>
         <div class="menu-container">
-            <span class="menu-icon" onclick="toggleMenu()">⋮</span>
+            <span class="menu-icon" onclick="toggleMenu(event)">⋮</span>
             <div class="menu-options" id="menuOptions">
                 <div class="menu-item" onclick="showDeleteChatPopup()">Delete Chat</div>
             </div>
@@ -372,19 +374,21 @@
         }
 
         function viewUserProfile(event) {
-            // Prevent profile view if clicking near the menu
+            event.stopPropagation(); // Prevent bubbling to document
             if (!event.target.closest('.menu-container')) {
                 window.location.href = `user.html?userId=${recipientId}`;
             }
         }
 
         function toggleMenu(event) {
-            event.stopPropagation(); // Prevent triggering viewUserProfile
+            event.stopPropagation(); // Prevent bubbling to document
             const menuOptions = document.getElementById('menuOptions');
+            console.log('Toggling menu, current display:', menuOptions.style.display); // Debug log
             menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
         }
 
         function showDeleteChatPopup() {
+            console.log('Showing delete chat popup'); // Debug log
             toggleMenu();
             const modal = document.getElementById('deleteChatModal');
             modal.style.display = 'flex';
@@ -442,8 +446,11 @@
         // Close menu if clicking outside
         document.addEventListener('click', function(event) {
             const menuContainer = document.querySelector('.menu-container');
-            if (!menuContainer.contains(event.target)) {
-                document.getElementById('menuOptions').style.display = 'none';
+            const modal = document.getElementById('deleteChatModal');
+            if (!menuContainer.contains(event.target) && modal.style.display !== 'flex') {
+                const menuOptions = document.getElementById('menuOptions');
+                console.log('Closing menu due to outside click'); // Debug log
+                menuOptions.style.display = 'none';
             }
         });
     </script>
