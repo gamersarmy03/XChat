@@ -390,20 +390,26 @@
         }
 
         function showDeleteChatPopup(event) {
-            event.stopPropagation(); // Prevent closing the menu prematurely
-            console.log('Attempting to show delete chat popup'); // Debug log
-            toggleMenu(); // Close the menu
+            event.stopPropagation();
+            console.log('Showing delete chat popup'); // Debug log
             const modal = document.getElementById('deleteChatModal');
-            console.log('Modal display before:', modal.style.display); // Debug log
-            modal.style.display = 'flex';
-            console.log('Modal display after:', modal.style.display); // Debug log
+            if (modal) {
+                modal.style.display = 'flex';
+                toggleMenu(); // Close the menu after showing popup
+            } else {
+                console.error('Modal element not found');
+            }
         }
 
         function closeDeleteChatPopup() {
             const modal = document.getElementById('deleteChatModal');
-            console.log('Closing delete chat popup'); // Debug log
-            modal.style.display = 'none';
-            document.getElementById('deleteForRecipient').checked = false;
+            if (modal) {
+                console.log('Closing delete chat popup'); // Debug log
+                modal.style.display = 'none';
+                document.getElementById('deleteForRecipient').checked = false;
+            } else {
+                console.error('Modal element not found');
+            }
         }
 
         async function deleteChat() {
@@ -427,22 +433,18 @@
                 );
 
                 const deletePromises = response.documents.map(async (message) => {
-                    if (
-                        deleteForRecipient ||
-                        message.senderId === currentUserId
-                    ) {
-                        await database.deleteDocument(
-                            '67ed2a13003e4a7f3cf6',
-                            '67ef778a000d39f89fd4',
-                            message.$id
-                        );
-                    }
+                    await database.deleteDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ef778a000d39f89fd4',
+                        message.$id
+                    );
                 });
 
                 await Promise.all(deletePromises);
+                console.log('Chat deleted successfully');
                 closeDeleteChatPopup();
                 document.getElementById('chatHistory').innerHTML = '';
-                window.location.href = 'home.html';
+                window.location.href = 'home.html'; // Redirect to update home.html list
             } catch (error) {
                 console.error('Error deleting chat:', error);
                 alert('Failed to delete chat: ' + error.message);
@@ -452,7 +454,7 @@
         document.addEventListener('click', function(event) {
             const menuContainer = document.querySelector('.menu-container');
             const modal = document.getElementById('deleteChatModal');
-            if (!menuContainer.contains(event.target) && modal.style.display !== 'flex') {
+            if (!menuContainer.contains(event.target) && (!modal || modal.style.display !== 'flex')) {
                 const menuOptions = document.getElementById('menuOptions');
                 console.log('Closing menu due to outside click');
                 menuOptions.style.display = 'none';
