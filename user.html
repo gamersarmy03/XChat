@@ -9,75 +9,52 @@
         body {
             background-color: #000000;
             color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             margin: 0;
             font-family: Arial, sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
         }
-        .profile-container {
-            display: flex;
-            align-items: center;
-            background-color: #000000;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            max-width: 400px;
-            width: 100%;
+        .user-container {
+            text-align: center;
         }
-        .profile-pic {
-            width: 80px; /* Copied from profile.html */
-            height: 80px; /* Copied from profile.html */
-            border-radius: 50%; /* Copied from profile.html */
-            margin-right: 20px; /* Copied from profile.html */
-            border: 2px solid #ffffff; /* Copied from profile.html */
-            transition: transform 0.3s ease; /* Copied from profile.html */
+        .user-pic {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin-bottom: 20px;
         }
-        .profile-pic:hover {
-            transform: scale(1.1); /* Copied from profile.html */
-        }
-        .profile-info {
-            display: flex;
-            flex-direction: row; /* Changed to row to align name and username side by side */
-            align-items: center; /* Vertically center the name and username */
-        }
-        .profile-name {
-            margin: 0;
-            font-size: 24px;
-            color: #ffffff;
+        .user-name {
             display: inline-flex;
             align-items: center;
-            margin-right: 10px; /* Space between name and username */
         }
         .verified-tick {
-            width: 20px;
-            height: 20px;
-            margin-left: 8px;
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
         }
-        .profile-username {
-            color: #555;
-            font-size: 16px;
-            margin: 0; /* Removed top margin since it's now side by side */
+        .back-btn {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
         }
-        /* Additional styling for other sections (optional) */
-        .bio {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #cccccc;
+        .back-btn:hover {
+            background-color: #cccccc;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
-    <div class="profile-container">
-        <img id="userProfilePic" class="profile-pic" alt="User Profile Picture" src="defaultdp.png">
-        <div class="profile-info">
-            <h2 class="profile-name" id="userName"></h2>
-            <p class="profile-username" id="userUsername"></p>
-            <p class="bio" id="userBio">This is a sample bio. Update me!</p>
-        </div>
+    <div class="user-container">
+        <img id="userPic" class="user-pic" alt="User Profile Picture">
+        <h2 id="userName" class="user-name"></h2>
+        <p id="userUsername"></p>
+        <button class="back-btn" onclick="goBack()">Back to Chat</button>
     </div>
 
     <script>
@@ -91,12 +68,20 @@
         const bucketId = '67ef59d4002282002e07';
         const defaultDP = 'defaultdp.png';
 
+        let currentUserId, viewedUserId;
+
         window.onload = async function() {
             try {
                 await account.get();
+                currentUserId = localStorage.getItem('userId');
+                if (!currentUserId) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
                 const urlParams = new URLSearchParams(window.location.search);
-                const userId = urlParams.get('userId');
-                if (!userId) {
+                viewedUserId = urlParams.get('userId');
+                if (!viewedUserId) {
                     window.location.href = 'home.html';
                     return;
                 }
@@ -104,19 +89,8 @@
                 const user = await database.getDocument(
                     '67ed2a13003e4a7f3cf6',
                     '67ee9da70025aa03c173',
-                    userId
+                    viewedUserId
                 );
-
-                let verifiedTick = '';
-                if (user.username === 'anmolverma') {
-                    verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
-                } else if (user.email === 'gamersarmy03@gmail.com' || user.email === 'puspasoni95@gmail.com') {
-                    verifiedTick = `<img src="gold.png" class="verified-tick" alt="Gold Verified Tick">`;
-                }
-
-                document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
-                document.getElementById('userUsername').textContent = `@${user.username}`;
-                document.getElementById('userBio').textContent = user.bio || 'No bio available.';
 
                 let profilePicUrl = defaultDP;
                 if (user.profilepicture && user.profilepicture !== defaultDP) {
@@ -126,12 +100,26 @@
                         profilePicUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${user.profilepicture}/view?project=${client.config.project}`;
                     }
                 }
-                document.getElementById('userProfilePic').src = profilePicUrl;
 
+                // Check for verified status
+                let verifiedTick = '';
+                if (user.username === 'anmolverma') {
+                    verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
+                } else if (user.email === 'gamersarmy03@gmail.com' || user.email === 'puspasoni95@gmail.com') {
+                    verifiedTick = `<img src="gold.png" class="verified-tick" alt="Gold Verified Tick">`;
+                }
+
+                document.getElementById('userPic').src = profilePicUrl;
+                document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
+                document.getElementById('userUsername').textContent = '@' + user.username;
             } catch (error) {
                 console.error('Error loading user profile:', error);
                 window.location.href = 'home.html';
             }
+        }
+
+        function goBack() {
+            window.location.href = `chat.html?recipientId=${viewedUserId}`;
         }
     </script>
 </body>
