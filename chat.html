@@ -109,9 +109,9 @@
             position: relative;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             word-wrap: break-word;
-            display: inline-block; /* Changed to inline-block to adapt to content */
-            min-width: 100px; /* Minimum width to avoid collapsing too much */
-            max-width: 80%; /* Optional upper limit to prevent overly wide bars */
+            display: inline-block; /* Allows width to adjust to content */
+            min-width: 100px; /* Minimum width to avoid collapsing */
+            /* Removed max-width to let content dictate length */
         }
         .message.sent {
             margin-left: auto;
@@ -381,9 +381,7 @@
                 <div class="message-content">${message.content}</div>
                 <div class="message-time">${new Date(message.timestamp).toLocaleTimeString()}</div>
             `;
-            // Adjust width dynamically based on content
-            const contentWidth = message.content.length * 8 + 40; // Approximate width (8px per character + padding)
-            messageDiv.style.width = `${Math.min(contentWidth, 80)}vw`; // Cap at 80% of viewport width
+            // Let the inline-block handle width naturally, no manual width calculation
             chatHistory.appendChild(messageDiv);
         }
 
