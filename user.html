@@ -6,47 +6,62 @@
     <title>User Profile - XChit</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
-        body {
-            background-color: #000000;
-            color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-        .user-container {
-            text-align: center;
-        }
-        .user-pic {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            margin-bottom: 20px;
-        }
-        .user-name {
-            display: inline-flex;
-            align-items: center;
-        }
-        .verified-tick {
-            width: 16px;
-            height: 16px;
-            margin-left: 5px;
-        }
-        .back-btn {
-            background-color: #ffffff;
-            color: #000000;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        .back-btn:hover {
-            background-color: #cccccc;
-        }
-    </style>
+    body {
+        background-color: #000000;
+        color: #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+    .user-container {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    .user-pic {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        margin-bottom: 20px;
+        border: 2px solid #ffffff;
+        transition: transform 0.3s ease;
+    }
+    .user-pic:hover {
+        transform: scale(1.1);
+    }
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .user-name {
+        display: inline-flex;
+        align-items: center;
+        margin: 0;
+    }
+    .verified-tick {
+        width: 16px;
+        height: 16px;
+        margin-left: 5px;
+    }
+    .back-btn {
+        background-color: #ffffff;
+        color: #000000;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+    .back-btn:hover {
+        background-color: #cccccc;
+    }
+</style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
