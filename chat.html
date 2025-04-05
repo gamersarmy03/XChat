@@ -21,7 +21,7 @@
             justify-content: space-between;
             align-items: center;
             background-color: #000000;
-            position: relative; /* Ensure positioning context */
+            position: relative;
         }
         .profile-container {
             display: flex;
@@ -41,7 +41,7 @@
         }
         .menu-container {
             padding: 5px;
-            position: relative; /* Anchor for absolute positioning */
+            position: relative;
         }
         .menu-icon {
             font-size: 24px;
@@ -53,7 +53,7 @@
         .menu-options {
             display: none;
             position: absolute;
-            top: calc(100% + 5px); /* Position below the icon with slight offset */
+            top: calc(100% + 5px);
             right: 0;
             background-color: #222;
             border: 1px solid #ffffff;
@@ -61,7 +61,7 @@
             padding: 5px;
             z-index: 1200;
             min-width: 120px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Optional: visual clarity */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         .menu-item {
             padding: 5px 10px;
@@ -192,7 +192,7 @@
         <div class="menu-container">
             <span class="menu-icon" onclick="toggleMenu(event)">⋮</span>
             <div class="menu-options" id="menuOptions">
-                <div class="menu-item" onclick="showDeleteChatPopup()">Delete Chat</div>
+                <div class="menu-item" onclick="showDeleteChatPopup(event)">Delete Chat</div>
             </div>
         </div>
     </div>
@@ -389,15 +389,19 @@
             menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
         }
 
-        function showDeleteChatPopup() {
-            console.log('Showing delete chat popup');
-            toggleMenu();
+        function showDeleteChatPopup(event) {
+            event.stopPropagation(); // Prevent closing the menu prematurely
+            console.log('Attempting to show delete chat popup'); // Debug log
+            toggleMenu(); // Close the menu
             const modal = document.getElementById('deleteChatModal');
+            console.log('Modal display before:', modal.style.display); // Debug log
             modal.style.display = 'flex';
+            console.log('Modal display after:', modal.style.display); // Debug log
         }
 
         function closeDeleteChatPopup() {
             const modal = document.getElementById('deleteChatModal');
+            console.log('Closing delete chat popup'); // Debug log
             modal.style.display = 'none';
             document.getElementById('deleteForRecipient').checked = false;
         }
