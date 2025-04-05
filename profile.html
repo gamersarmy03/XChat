@@ -38,7 +38,6 @@
             background-color: #cccccc;
         }
         .edit-input {
-            display: none;
             background-color: #333;
             color: #ffffff;
             border: 1px solid #ffffff;
@@ -46,6 +45,7 @@
             padding: 5px;
             margin: 5px 0;
             width: 180px;
+            display: none; /* Hidden by default */
         }
         .username-container {
             display: flex;
@@ -56,9 +56,6 @@
         .username-prefix {
             color: #ffffff;
             margin-right: 5px;
-        }
-        #usernameInput {
-            width: 180px;
         }
         .user-name {
             margin-bottom: 10px; /* Add some space below the name */
@@ -280,9 +277,9 @@
             const usernameInput = document.getElementById('usernameInput');
             usernameContainer.style.display = usernameContainer.style.display === 'block' ? 'none' : 'block';
             if (usernameContainer.style.display === 'block') {
-                usernameInput.focus();
-                const currentUsername = document.getElementById('userUsername').textContent.slice(1);
-                usernameInput.value = currentUsername;
+                const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove '@'
+                usernameInput.value = currentUsername || ''; // Ensure it's not undefined
+                usernameInput.focus(); // Focus the input field
             }
         }
 
