@@ -16,7 +16,7 @@
             flex-direction: column;
         }
         .header {
-            padding: 10px;
+            padding: 10px 15px; /* Added padding on the right */
             position: relative;
             display: flex;
             justify-content: space-between;
@@ -40,22 +40,26 @@
         }
         .menu-container {
             position: relative;
+            padding: 5px 10px; /* Increased tappable area */
+            margin-right: 5px; /* Moved slightly inward from the edge */
         }
         .menu-icon {
             font-size: 24px;
             cursor: pointer;
             color: #ffffff;
+            display: block; /* Ensures it takes up space */
         }
         .menu-options {
             display: none;
             position: absolute;
-            top: 30px;
+            top: 35px; /* Adjusted to account for padding */
             right: 0;
             background-color: #222;
             border: 1px solid #ffffff;
             border-radius: 5px;
             padding: 5px;
             z-index: 1000;
+            min-width: 120px; /* Ensures menu is wide enough */
         }
         .menu-item {
             padding: 5px 10px;
@@ -367,11 +371,15 @@
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        function viewUserProfile() {
-            window.location.href = `user.html?userId=${recipientId}`;
+        function viewUserProfile(event) {
+            // Prevent profile view if clicking near the menu
+            if (!event.target.closest('.menu-container')) {
+                window.location.href = `user.html?userId=${recipientId}`;
+            }
         }
 
-        function toggleMenu() {
+        function toggleMenu(event) {
+            event.stopPropagation(); // Prevent triggering viewUserProfile
             const menuOptions = document.getElementById('menuOptions');
             menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
         }
@@ -411,7 +419,7 @@
                 const deletePromises = response.documents.map(async (message) => {
                     if (
                         deleteForRecipient ||
-                        message.senderId === currentUserId // Delete only sender's messages unless checked
+                        message.senderId === currentUserId
                     ) {
                         await database.deleteDocument(
                             '67ed2a13003e4a7f3cf6',
@@ -423,8 +431,8 @@
 
                 await Promise.all(deletePromises);
                 closeDeleteChatPopup();
-                document.getElementById('chatHistory').innerHTML = ''; // Clear chat history
-                window.location.href = 'home.html'; // Redirect to home, where the list will update
+                document.getElementById('chatHistory').innerHTML = '';
+                window.location.href = 'home.html';
             } catch (error) {
                 console.error('Error deleting chat:', error);
                 alert('Failed to delete chat: ' + error.message);
