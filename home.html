@@ -27,24 +27,6 @@
             font-size: 24px;
             cursor: pointer;
         }
-        .menu {
-            display: none;
-            position: absolute;
-            top: 40px;
-            left: 10px;
-            background-color: #333;
-            padding: 5px;
-            border-radius: 5px;
-        }
-        .menu a {
-            color: #ffffff;
-            text-decoration: none;
-            display: block;
-            margin: 10px 0;
-        }
-        .menu a:hover {
-            color: #cccccc;
-        }
         .logo-container {
             display: flex;
             align-items: center;
@@ -160,10 +142,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="hamburger" onclick="toggleMenu()">☰</div>
-        <div class="menu" id="menu">
-            <a href="profile.html">Profile</a>
-        </div>
+        <div class="hamburger" onclick="goToProfile()">☰</div>
         <div class="logo-container">
             <img src="logo.png" alt="Logo" class="logo">
             <span class="logo-text">XChit</span>
@@ -217,17 +196,13 @@
             }
         }
 
-        function toggleMenu() {
-            const menu = document.getElementById('menu');
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-            document.getElementById('searchInput').style.display = 'none';
-            document.getElementById('suggestions').style.display = 'none';
+        function goToProfile() {
+            window.location.href = 'profile.html';
         }
 
         function toggleSearch() {
             const searchInput = document.getElementById('searchInput');
             searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
-            document.getElementById('menu').style.display = 'none';
             document.getElementById('suggestions').style.display = 'none';
             if (searchInput.style.display === 'block') {
                 searchInput.focus();
@@ -389,17 +364,12 @@
         }
 
         document.addEventListener('click', function(event) {
-            const menu = document.getElementById('menu');
-            const hamburger = document.getElementsByClassName('hamburger')[0];
             const searchContainer = document.getElementsByClassName('search-container')[0];
-            if (!menu.contains(event.target) && !hamburger.contains(event.target)) {
-                menu.style.display = 'none';
-            }
             if (!searchContainer.contains(event.target) && event.target !== document.getElementById('searchInput')) {
                 document.getElementById('searchInput').style.display = 'none';
                 document.getElementById('suggestions').style.display = 'none';
             }
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b62d4cba87c015',t:'MTc0MzgyNjAyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
