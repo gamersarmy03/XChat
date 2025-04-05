@@ -45,12 +45,13 @@
             border-radius: 5px;
             padding: 5px;
             margin: 5px 0;
-            width: 200px;
+            width: 180px;
         }
         .username-container {
             display: flex;
             align-items: center;
             justify-content: center;
+            margin-top: 5px;
         }
         .username-prefix {
             color: #ffffff;
@@ -276,9 +277,9 @@
 
         function toggleEditUsername() {
             const usernameContainer = document.getElementById('usernameContainer');
+            const usernameInput = document.getElementById('usernameInput');
             usernameContainer.style.display = usernameContainer.style.display === 'block' ? 'none' : 'block';
             if (usernameContainer.style.display === 'block') {
-                const usernameInput = document.getElementById('usernameInput');
                 usernameInput.focus();
                 const currentUsername = document.getElementById('userUsername').textContent.slice(1);
                 usernameInput.value = currentUsername;
