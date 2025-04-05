@@ -214,7 +214,7 @@
             const suggestions = document.getElementById('suggestions');
 
             if (query.startsWith('@') && query.length > 1) {
-                const searchTerm = query.slice(1).toLowerCase();
+                const searchTerm = query.slice(1).toLowerCase(); // Remove '@' and standardize to lowercase
                 console.log('Searching for:', searchTerm);
 
                 try {
@@ -222,8 +222,8 @@
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
                         [
-                            Appwrite.Query.contains('username', searchTerm),
-                            Appwrite.Query.notEqual('$id', currentUserId)
+                            Appwrite.Query.equal('username', searchTerm), // Exact match for username
+                            Appwrite.Query.notEqual('$id', currentUserId) // Exclude current user
                         ]
                     );
 
@@ -231,6 +231,7 @@
 
                     suggestions.innerHTML = '';
                     if (response.documents.length > 0) {
+                        // Only show suggestions if there's an exact match
                         response.documents.forEach(user => {
                             console.log('Found user:', user);
                             const suggestionItem = document.createElement('div');
@@ -243,7 +244,7 @@
                         });
                         suggestions.style.display = 'block';
                     } else {
-                        console.log('No users found for search term:', searchTerm);
+                        console.log('No exact match found for:', searchTerm);
                         suggestions.style.display = 'none';
                     }
                 } catch (error) {
@@ -371,5 +372,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b62d4cba87c015',t:'MTc0MzgyNjAyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b62d4cba87c015',t:'MTc0MzgyNjAyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b782acfd40bcc6',t:'MTc0Mzg0MDAxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
