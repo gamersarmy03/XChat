@@ -44,18 +44,8 @@
             border-radius: 5px;
             padding: 5px;
             margin: 5px 0;
-            width: 180px;
+            width: 200px;
             display: none; /* Hidden by default */
-        }
-        .username-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 5px;
-        }
-        .username-prefix {
-            color: #ffffff;
-            margin-right: 5px;
         }
         .user-name {
             margin-bottom: 10px; /* Add some space below the name */
@@ -80,10 +70,7 @@
         <input type="text" id="nameInput" class="edit-input" placeholder="Enter new name" onkeyup="updateName(event)">
         <p id="userUsername"></p>
         <button class="edit-btn" onclick="toggleEditUsername()">Change Username</button>
-        <div class="username-container" id="usernameContainer" style="display: none;">
-            <span class="username-prefix">@</span>
-            <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
-        </div>
+        <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
         <p id="userEmail"></p>
         <button class="logout-btn" onclick="signOut()">Logout</button>
         <button class="back-btn" onclick="goBack()">Back to Home</button>
@@ -273,10 +260,9 @@
         }
 
         function toggleEditUsername() {
-            const usernameContainer = document.getElementById('usernameContainer');
             const usernameInput = document.getElementById('usernameInput');
-            usernameContainer.style.display = usernameContainer.style.display === 'block' ? 'none' : 'block';
-            if (usernameContainer.style.display === 'block') {
+            usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
+            if (usernameInput.style.display === 'block') {
                 const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove '@'
                 usernameInput.value = currentUsername || ''; // Ensure it's not undefined
                 usernameInput.focus(); // Focus the input field
@@ -315,7 +301,7 @@
                     );
 
                     document.getElementById('userUsername').textContent = '@' + newUsername;
-                    document.getElementById('usernameContainer').style.display = 'none';
+                    document.getElementById('usernameInput').style.display = 'none';
                     alert('Username updated successfully!');
 
                     // Update the name with verified tick after username change
