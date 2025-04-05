@@ -45,15 +45,58 @@
             padding: 5px;
             margin: 5px 0;
             width: 200px;
-            display: none; /* Hidden by default */
+            display: none;
         }
         .user-name {
-            margin-bottom: 10px; /* Add some space below the name */
+            margin-bottom: 10px;
         }
         .verified-tick {
             width: 16px;
             height: 16px;
             margin-left: 5px;
+        }
+
+        /* Custom Popup Styles */
+        .custom-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            text-align: center;
+            width: 300px;
+        }
+        .custom-popup p {
+            margin: 0 0 20px 0;
+            color: #ffffff;
+        }
+        .custom-popup .ok-btn, .custom-popup .cancel-btn {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        .custom-popup .ok-btn:hover, .custom-popup .cancel-btn:hover {
+            background-color: #0056b3;
+        }
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
@@ -76,6 +119,13 @@
         <button class="back-btn" onclick="goBack()">Back to Home</button>
     </div>
 
+    <!-- Custom Popup -->
+    <div class="popup-overlay" id="popupOverlay"></div>
+    <div class="custom-popup" id="customPopup">
+        <p id="popupMessage"></p>
+        <button class="ok-btn" onclick="closePopup()">OK</button>
+    </div>
+
     <script>
         const client = new Appwrite.Client()
             .setEndpoint('https://cloud.appwrite.io/v1')
@@ -86,6 +136,37 @@
         const storage = new Appwrite.Storage(client);
         const bucketId = '67ef59d4002282002e07';
         const defaultDP = 'defaultdp.png';
+
+        let customPopup = document.getElementById('customPopup');
+        let popupOverlay = document.getElementById('popupOverlay');
+
+        // Custom Popup Function
+        function showPopup(message, hasCancel = false) {
+            const popupMessage = document.getElementById('popupMessage');
+            popupMessage.textContent = message;
+            customPopup.style.display = 'block';
+            popupOverlay.style.display = 'block';
+            if (hasCancel) {
+                customPopup.innerHTML = `
+                    <p id="popupMessage">${message}</p>
+                    <button class="ok-btn" onclick="closePopup(true)">OK</button>
+                    <button class="cancel-btn" onclick="closePopup(false)">Cancel</button>
+                `;
+            }
+        }
+
+        function closePopup(action = true) {
+            customPopup.style.display = 'none';
+            popupOverlay.style.display = 'none';
+            if (action) {
+                // Handle OK action if needed
+            }
+            // Refocus the last active input if applicable
+            const usernameInput = document.getElementById('usernameInput');
+            if (usernameInput && usernameInput.style.display === 'block') {
+                usernameInput.focus();
+            }
+        }
 
         window.onload = async function() {
             try {
@@ -111,7 +192,6 @@
                     }
                 }
 
-                // Check for verified status
                 let verifiedTick = '';
                 if (user.username === 'anmolverma') {
                     verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
@@ -125,7 +205,7 @@
                 document.getElementById('userUsername').textContent = '@' + user.username;
             } catch (error) {
                 console.error('Error loading profile:', error);
-                window.location.href = 'index.html';
+                showPopup('Failed to load profile: ' + error.message);
             }
         }
 
@@ -137,6 +217,7 @@
             const file = event.target.files[0];
             if (!file) {
                 console.error('No file selected');
+                showPopup('No file selected for profile picture.');
                 return;
             }
 
@@ -178,10 +259,10 @@
 
                 const fileUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${response.$id}/view?project=${client.config.project}`;
                 document.getElementById('profilePic').src = fileUrl;
-                console.log('Profile picture updated successfully');
+                showPopup('Profile picture updated successfully!');
             } catch (error) {
                 console.error('Error uploading DP:', error);
-                alert('Failed to update profile picture: ' + error.message);
+                showPopup('Failed to update profile picture: ' + error.message);
             }
         }
 
@@ -210,9 +291,10 @@
                     { profilepicture: defaultDP }
                 );
                 document.getElementById('profilePic').src = defaultDP;
+                showPopup('Profile picture removed successfully!');
             } catch (error) {
                 console.error('Error removing DP:', error);
-                alert('Failed to remove profile picture: ' + error.message);
+                showPopup('Failed to remove profile picture: ' + error.message);
             }
         }
 
@@ -221,7 +303,7 @@
             nameInput.style.display = nameInput.style.display === 'block' ? 'none' : 'block';
             if (nameInput.style.display === 'block') {
                 nameInput.focus();
-                nameInput.value = document.getElementById('userName').textContent.replace(/<[^>]*>/g, ''); // Remove HTML tags (verified tick)
+                nameInput.value = document.getElementById('userName').textContent.replace(/<[^>]*>/g, '');
             }
         }
 
@@ -237,7 +319,6 @@
                             userId,
                             { name: newName }
                         );
-                        // Update the name with verified tick
                         const user = await database.getDocument(
                             '67ed2a13003e4a7f3cf6',
                             '67ee9da70025aa03c173',
@@ -251,9 +332,10 @@
                         }
                         document.getElementById('userName').innerHTML = `${newName}${verifiedTick}`;
                         event.target.style.display = 'none';
+                        showPopup('Name updated successfully!');
                     } catch (error) {
                         console.error('Error updating name:', error);
-                        alert('Failed to update name: ' + error.message);
+                        showPopup('Failed to update name: ' + error.message);
                     }
                 }
             }
@@ -263,9 +345,9 @@
             const usernameInput = document.getElementById('usernameInput');
             usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
             if (usernameInput.style.display === 'block') {
-                const currentUsername = document.getElementById('userUsername').textContent.slice(1); // Remove '@'
-                usernameInput.value = currentUsername || ''; // Ensure it's not undefined
-                usernameInput.focus(); // Focus the input field
+                const currentUsername = document.getElementById('userUsername').textContent.slice(1);
+                usernameInput.value = currentUsername || '';
+                usernameInput.focus();
             }
         }
 
@@ -273,7 +355,7 @@
             if (event.key === 'Enter') {
                 const newUsername = event.target.value.trim().toLowerCase();
                 if (!newUsername) {
-                    alert('Username cannot be empty');
+                    showPopup('Username cannot be empty.');
                     return;
                 }
 
@@ -289,7 +371,7 @@
                     );
 
                     if (response.documents.length > 0) {
-                        alert('Username "' + newUsername + '" is already taken. Please choose a different username.');
+                        showPopup(`Username "${newUsername}" is already taken. Please choose a different username.`);
                         return;
                     }
 
@@ -302,9 +384,6 @@
 
                     document.getElementById('userUsername').textContent = '@' + newUsername;
                     document.getElementById('usernameInput').style.display = 'none';
-                    alert('Username updated successfully!');
-
-                    // Update the name with verified tick after username change
                     const user = await database.getDocument(
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
@@ -317,9 +396,10 @@
                         verifiedTick = `<img src="gold.png" class="verified-tick" alt="Gold Verified Tick">`;
                     }
                     document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
+                    showPopup('Username updated successfully!');
                 } catch (error) {
                     console.error('Error updating username:', error);
-                    alert('Failed to update username: ' + error.message);
+                    showPopup('Failed to update username: ' + error.message);
                 }
             }
         }
@@ -329,6 +409,8 @@
                 await account.deleteSession('current');
             } catch (error) {
                 console.error('Error signing out:', error);
+                showPopup('Failed to sign out: ' + error.message);
+                return;
             }
             localStorage.removeItem('userId');
             window.location.href = 'index.html';
@@ -338,5 +420,5 @@
             window.location.href = 'home.html';
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b639c9aa49afb6',t:'MTc0MzgyNjU0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b639c9aa49afb6',t:'MTc0MzgyNjU0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b66b8aee2db05d',t:'MTc0MzgyODU3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
