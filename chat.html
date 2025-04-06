@@ -14,6 +14,7 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* Prevent body scrolling */
         }
         .header {
             padding: 10px;
@@ -21,7 +22,10 @@
             justify-content: space-between;
             align-items: center;
             background-color: #000000;
-            position: relative;
+            position: fixed; /* Fix the header at the top */
+            top: 0;
+            width: 100%;
+            z-index: 1100; /* Ensure it stays above other content */
         }
         .profile-container {
             display: flex;
@@ -93,11 +97,15 @@
             display: flex;
             flex-direction: column;
             padding: 10px;
+            margin-top: 60px; /* Space for the fixed header */
+            height: calc(100vh - 60px); /* Adjust height to fit below header */
+            overflow: hidden; /* Prevent container from scrolling */
         }
         .chat-history {
             flex: 1;
-            overflow-y: auto;
+            overflow-y: auto; /* Allow only this section to scroll */
             padding: 10px;
+            max-height: calc(100vh - 120px); /* Adjust for header and input */
         }
         .message {
             margin-bottom: 12px;
@@ -141,6 +149,7 @@
             background-color: #000000;
             border-top: 1px solid #333;
             align-items: center;
+            position: relative; /* Keep input at bottom */
         }
         .chat-input input {
             flex: 1;
@@ -521,5 +530,6 @@
             }
         });
     </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92be53d5ff734588',t:'MTc0MzkxMTQ5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
