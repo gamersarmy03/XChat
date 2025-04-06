@@ -88,7 +88,6 @@
         .menu-item:hover {
             background-color: var(--hover-color);
         }
-        /* Modern Custom Popup Styles */
         .modal {
             display: none;
             position: fixed;
@@ -235,10 +234,12 @@
         let currentUserId, viewedUserId;
 
         window.onload = async function() {
+            console.log('Page loaded, initializing...');
             try {
                 await account.get();
                 currentUserId = localStorage.getItem('userId');
                 if (!currentUserId) {
+                    console.log('No userId in localStorage, redirecting to index.html');
                     window.location.href = 'index.html';
                     return;
                 }
@@ -246,6 +247,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 viewedUserId = urlParams.get('userId');
                 if (!viewedUserId) {
+                    console.log('No viewedUserId in URL, redirecting to home.html');
                     window.location.href = 'home.html';
                     return;
                 }
@@ -275,6 +277,7 @@
                 document.getElementById('userPic').src = profilePicUrl;
                 document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
                 document.getElementById('userUsername').textContent = '@' + user.username;
+                console.log('User profile loaded successfully:', user);
             } catch (error) {
                 console.error('Error loading user profile:', error);
                 window.location.href = 'home.html';
@@ -284,30 +287,47 @@
         function toggleMenu(event) {
             event.stopPropagation();
             const menuOptions = document.getElementById('menuOptions');
+            if (!menuOptions) {
+                console.error('Menu options element not found!');
+                return;
+            }
             menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
-            console.log('Menu toggled:', menuOptions.style.display); // Debug
+            console.log('Menu toggled, display:', menuOptions.style.display);
         }
 
         function showAddToGroupPopup(event) {
             event.stopPropagation();
+            console.log('Add to Group clicked');
             toggleMenu(); // Close the menu
             const modal = document.getElementById('addToGroupModal');
-            console.log('Showing Add to Group popup'); // Debug
+            if (!modal) {
+                console.error('Add to Group modal not found!');
+                return;
+            }
             modal.style.display = 'flex';
+            console.log('Add to Group modal display set to flex');
             loadExistingGroups();
         }
 
         function showCreateGroupPopup() {
             closeModal('addToGroupModal');
             const modal = document.getElementById('createGroupModal');
-            console.log('Showing Create Group popup'); // Debug
+            if (!modal) {
+                console.error('Create Group modal not found!');
+                return;
+            }
             modal.style.display = 'flex';
+            console.log('Create Group modal display set to flex');
         }
 
         function closeModal(modalId) {
             const modal = document.getElementById(modalId);
-            console.log(`Closing modal: ${modalId}`); // Debug
+            if (!modal) {
+                console.error(`Modal with ID ${modalId} not found!`);
+                return;
+            }
             modal.style.display = 'none';
+            console.log(`Modal ${modalId} closed`);
             if (modalId === 'createGroupModal') {
                 document.getElementById('groupDpInput').value = '';
                 document.getElementById('groupNameInput').value = '';
@@ -317,12 +337,17 @@
 
         async function loadExistingGroups() {
             try {
+                console.log('Loading existing groups...');
                 const response = await database.listDocuments(
                     '67ed2a13003e4a7f3cf6',
-                    '67f21209001e87634168', // Replace with your actual groups collection ID
+                    '67f21209001e87634168', // Updated groups collection ID
                     [Appwrite.Query.equal('ownerId', currentUserId)]
                 );
                 const groupList = document.getElementById('groupList');
+                if (!groupList) {
+                    console.error('Group list element not found!');
+                    return;
+                }
                 groupList.innerHTML = '';
                 if (response.documents.length === 0) {
                     groupList.innerHTML = '<p>No groups found.</p>';
@@ -335,7 +360,7 @@
                         groupList.appendChild(groupItem);
                     });
                 }
-                console.log('Groups loaded:', response.documents); // Debug
+                console.log('Groups loaded:', response.documents);
             } catch (error) {
                 console.error('Error loading groups:', error);
                 document.getElementById('groupList').innerHTML = '<p>Error loading groups.</p>';
@@ -346,7 +371,7 @@
             try {
                 const group = await database.getDocument(
                     '67ed2a13003e4a7f3cf6',
-                    'groups',
+                    '67f21209001e87634168',
                     groupId
                 );
                 const members = group.members || [];
@@ -354,7 +379,7 @@
                     members.push(viewedUserId);
                     await database.updateDocument(
                         '67ed2a13003e4a7f3cf6',
-                        'groups',
+                        '67f21209001e87634168',
                         groupId,
                         { members }
                     );
@@ -382,7 +407,7 @@
             try {
                 const usernameCheck = await database.listDocuments(
                     '67ed2a13003e4a7f3cf6',
-                    'groups',
+                    '67f21209001e87634168',
                     [Appwrite.Query.equal('username', groupUsername)]
                 );
                 if (usernameCheck.total > 0) {
@@ -407,7 +432,7 @@
 
                 await database.createDocument(
                     '67ed2a13003e4a7f3cf6',
-                    '67f21209001e87634168', // Replace with your actual groups collection ID
+                    '67f21209001e87634168',
                     Appwrite.ID.unique(),
                     groupData
                 );
@@ -420,19 +445,19 @@
             }
         }
 
-        // Close menu or modals when clicking outside
         document.addEventListener('click', function(event) {
             const menuContainer = document.querySelector('.menu-container');
             const addToGroupModal = document.getElementById('addToGroupModal');
             const createGroupModal = document.getElementById('createGroupModal');
 
             if (!menuContainer.contains(event.target)) {
-                document.getElementById('menuOptions').style.display = 'none';
+                const menuOptions = document.getElementById('menuOptions');
+                if (menuOptions) menuOptions.style.display = 'none';
             }
-            if (addToGroupModal.style.display === 'flex' && !addToGroupModal.querySelector('.modal-content').contains(event.target)) {
+            if (addToGroupModal && addToGroupModal.style.display === 'flex' && !addToGroupModal.querySelector('.modal-content').contains(event.target)) {
                 closeModal('addToGroupModal');
             }
-            if (createGroupModal.style.display === 'flex' && !createGroupModal.querySelector('.modal-content').contains(event.target)) {
+            if (createGroupModal && createGroupModal.style.display === 'flex' && !createGroupModal.querySelector('.modal-content').contains(event.target)) {
                 closeModal('createGroupModal');
             }
         });
