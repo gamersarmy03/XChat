@@ -21,11 +21,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #000000;
-            position: fixed; /* Fix the header at the top */
+            background-color: #1a1a1a; /* Slightly lighter than pure black for contrast */
+            position: fixed;
             top: 0;
             width: 100%;
-            z-index: 1100; /* Ensure it stays above other content */
+            z-index: 1100;
+            border-bottom: 1px solid #333; /* Add a subtle border for separation */
         }
         .profile-container {
             display: flex;
@@ -56,7 +57,7 @@
             margin-left: 5px;
         }
         .chat-title .recipient-username {
-            color: #666;
+            color: #cccccc; /* Lighter color for better readability */
             font-size: 14px;
             margin: 0;
         }
@@ -146,10 +147,14 @@
         .chat-input {
             display: flex;
             padding: 10px;
-            background-color: #000000;
+            background-color: #1a1a1a; /* Match header background for consistency */
             border-top: 1px solid #333;
             align-items: center;
-            position: relative; /* Keep input at bottom */
+            position: fixed; /* Fix input at bottom */
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box; /* Ensure padding doesn't affect width */
         }
         .chat-input input {
             flex: 1;
