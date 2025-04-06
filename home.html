@@ -93,7 +93,7 @@
         }
         .content {
             flex: 1;
-            padding: 60px 10px 10px 10px; /* Adjusted for fixed header */
+            padding: 60px 10px 10px 10px;
             overflow-y: auto;
             box-sizing: border-box;
         }
@@ -163,7 +163,7 @@
             align-items: center;
             box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
             transition: transform 0.3s ease, background 0.3s ease;
-            z-index: 1000;
+            z-index: 1100; /* Increased to ensure clickability */
         }
         .create-group-btn:hover {
             background: linear-gradient(135deg, #0056b3, #003366);
@@ -190,8 +190,10 @@
             color: #ffffff;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             text-align: center;
+            max-height: 80vh;
+            overflow-y: auto;
         }
-        .modal-content input, .modal-content textarea {
+        .modal-content input, .modal-content textarea, .modal-content select {
             width: 100%;
             padding: 8px;
             margin: 10px 0;
@@ -253,7 +255,7 @@
         <div class="conversation-list" id="conversationList"></div>
     </div>
     <div class="message-notification" id="messageNotification"></div>
-    <button class="create-group-btn" onclick="showCreateGroupPopup()">+</button>
+    <button class="create-group-btn" id="createGroupBtn">+</button>
 
     <!-- Create Group Popup -->
     <div class="modal" id="createGroupModal">
@@ -263,7 +265,14 @@
             <img id="groupPicPreview" style="display:none; width: 100px; height: 100px; border-radius: 50%; margin: 10px auto;" alt="Group Picture Preview">
             <input type="text" id="groupNameInput" placeholder="Group Name">
             <input type="text" id="groupUsernameInput" placeholder="@GroupUsername" oninput="this.value = '@' + this.value.replace('@', '').toLowerCase()">
+            <textarea id="groupDescriptionInput" placeholder="Group Description (optional)"></textarea>
             <textarea id="membersInput" placeholder="Enter @usernames (one per line)"></textarea>
+            <select id="visibilityInput">
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+            </select>
+            <input type="text" id="rulesInput" placeholder="Group Rules (optional)">
+            <input type="text" id="tagsInput" placeholder="Tags (comma-separated, optional)">
             <div class="modal-buttons">
                 <button class="modal-btn confirm" onclick="createGroup()">Confirm</button>
                 <button class="modal-btn cancel" onclick="closeCreateGroupPopup()">Cancel</button>
@@ -296,8 +305,12 @@
 
                 await loadConversationsAndGroups();
                 subscribeToMessages();
+
+                // Explicitly bind the create group button event
+                const createGroupBtn = document.getElementById('createGroupBtn');
+                createGroupBtn.addEventListener('click', showCreateGroupPopup);
             } catch (error) {
-                console.error('Error loading user data:', error);
+                console.error('Error during onload:', error);
                 window.location.href = 'index.html';
             }
         }
@@ -308,8 +321,7 @@
 
         function toggleSearch() {
             const searchInput = document.getElementById('searchInput');
-            const currentDisplay = searchInput.style.display;
-            searchInput.style.display = currentDisplay === 'block' ? 'none' : 'block';
+            searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
             document.getElementById('suggestions').style.display = 'none';
             if (searchInput.style.display === 'block') {
                 searchInput.focus();
@@ -383,7 +395,6 @@
             conversationList.innerHTML = '<p>Loading...</p>';
 
             try {
-                // Load Conversations
                 const messageResponse = await database.listDocuments(
                     '67ed2a13003e4a7f3cf6',
                     '67ef778a000d39f89fd4',
@@ -396,7 +407,6 @@
                     ]
                 );
 
-                // Load Groups
                 let groupResponse;
                 try {
                     groupResponse = await database.listDocuments(
@@ -411,7 +421,6 @@
 
                 conversationList.innerHTML = '';
 
-                // Process Conversations
                 const conversations = {};
                 messageResponse.documents.forEach(message => {
                     const otherUserId = message.senderId === currentUserId ? message.recipientId : message.senderId;
@@ -464,7 +473,6 @@
                     conversationList.appendChild(conversationItem);
                 }
 
-                // Process Groups
                 groupResponse.documents.forEach(group => {
                     let groupPicUrl = defaultDP;
                     if (group.grouppicture && group.grouppicture !== defaultDP) {
@@ -493,7 +501,7 @@
                 }
             } catch (error) {
                 console.error('Error loading conversations and groups:', error);
-                conversationList.innerHTML = '<p>Error loading conversations. Please try again later.</p>';
+                conversationList.innerHTML = '<p>Error loading data. Please try again later.</p>';
             }
         }
 
@@ -528,19 +536,33 @@
         }
 
         function showCreateGroupPopup() {
-            console.log('Showing create group popup');
+            console.log('Attempting to show create group popup');
             const modal = document.getElementById('createGroupModal');
-            modal.style.display = 'flex';
-            document.getElementById('groupPicInput').value = '';
-            document.getElementById('groupPicPreview').style.display = 'none';
-            document.getElementById('groupNameInput').value = '';
-            document.getElementById('groupUsernameInput').value = '@';
-            document.getElementById('membersInput').value = '';
+            if (modal) {
+                modal.style.display = 'flex';
+                document.getElementById('groupPicInput').value = '';
+                document.getElementById('groupPicPreview').style.display = 'none';
+                document.getElementById('groupNameInput').value = '';
+                document.getElementById('groupUsernameInput').value = '@';
+                document.getElementById('groupDescriptionInput').value = '';
+                document.getElementById('membersInput').value = '';
+                document.getElementById('visibilityInput').value = 'public';
+                document.getElementById('rulesInput').value = '';
+                document.getElementById('tagsInput').value = '';
+                console.log('Popup displayed');
+            } else {
+                console.error('Modal element not found');
+            }
         }
 
         function closeCreateGroupPopup() {
             console.log('Closing create group popup');
-            document.getElementById('createGroupModal').style.display = 'none';
+            const modal = document.getElementById('createGroupModal');
+            if (modal) {
+                modal.style.display = 'none';
+            } else {
+                console.error('Modal element not found');
+            }
         }
 
         function previewGroupPic(event) {
@@ -555,7 +577,11 @@
         async function createGroup() {
             const groupName = document.getElementById('groupNameInput').value.trim();
             const groupUsername = document.getElementById('groupUsernameInput').value.trim().toLowerCase();
+            const groupDescription = document.getElementById('groupDescriptionInput').value.trim();
             const membersInput = document.getElementById('membersInput').value.trim();
+            const visibility = document.getElementById('visibilityInput').value;
+            const rules = document.getElementById('rulesInput').value.trim();
+            const tags = document.getElementById('tagsInput').value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
             const groupPicInput = document.getElementById('groupPicInput').files[0];
 
             if (!groupName) {
@@ -580,6 +606,7 @@
 
                 const memberUsernames = membersInput.split('\n').map(u => u.trim().toLowerCase().replace('@', '')).filter(u => u);
                 const members = [currentUserId];
+                const memberDetails = [];
                 for (const username of memberUsernames) {
                     if (username) {
                         const userResponse = await database.listDocuments(
@@ -588,9 +615,11 @@
                             [Appwrite.Query.equal('username', username)]
                         );
                         if (userResponse.documents.length > 0) {
-                            const userId = userResponse.documents[0].$id;
+                            const user = userResponse.documents[0];
+                            const userId = user.$id;
                             if (!members.includes(userId) && userId !== currentUserId) {
                                 members.push(userId);
+                                memberDetails.push({ userId: userId, username: user.username, role: 'member', joinedAt: new Date().toISOString() });
                             }
                         } else {
                             console.warn(`User @${username} not found. Skipping.`);
@@ -604,17 +633,28 @@
                     groupPictureId = uploadResponse.$id;
                 }
 
+                const groupData = {
+                    groupname: groupName,
+                    groupusername: groupUsername.slice(1),
+                    grouppicture: groupPictureId,
+                    description: groupDescription || '',
+                    members: members,
+                    memberDetails: memberDetails,
+                    ownerId: currentUserId,
+                    visibility: visibility,
+                    rules: rules || '',
+                    tags: tags,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    memberCount: members.length,
+                    status: 'active'
+                };
+
                 await database.createDocument(
                     groupsCollectionId,
                     groupsCollectionId,
                     Appwrite.ID.unique(),
-                    {
-                        groupname: groupName,
-                        groupusername: groupUsername.slice(1),
-                        grouppicture: groupPictureId,
-                        members: members,
-                        createdAt: new Date().toISOString()
-                    }
+                    groupData
                 );
 
                 closeCreateGroupPopup();
@@ -633,7 +673,7 @@
                 document.getElementById('searchInput').style.display = 'none';
                 document.getElementById('suggestions').style.display = 'none';
             }
-            if (modal.style.display === 'flex' && !modal.querySelector('.modal-content').contains(event.target)) {
+            if (modal && modal.style.display === 'flex' && !modal.querySelector('.modal-content').contains(event.target)) {
                 closeCreateGroupPopup();
             }
         });
