@@ -13,7 +13,6 @@
             --hover-color: #444;
             --border-color: #ffffff;
         }
-
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -25,7 +24,6 @@
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
         }
-
         .profile-container {
             text-align: center;
             padding: 20px;
@@ -33,7 +31,6 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-
         .profile-pic {
             width: 120px;
             height: 120px;
@@ -42,11 +39,9 @@
             border: 2px solid var(--border-color);
             transition: transform 0.3s ease;
         }
-
         .profile-pic:hover {
             transform: scale(1.1);
         }
-
         .edit-btn, .logout-btn, .remove-dp-btn, .back-btn {
             background-color: var(--primary-color);
             color: var(--text-color);
@@ -58,11 +53,9 @@
             font-size: 14px;
             transition: background-color 0.3s ease;
         }
-
         .edit-btn:hover, .logout-btn:hover, .remove-dp-btn:hover, .back-btn:hover {
             background-color: var(--hover-color);
         }
-
         .edit-input {
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -74,20 +67,62 @@
             display: none;
             font-size: 14px;
         }
-
         .user-name {
             margin-bottom: 15px;
             font-size: 1.5em;
         }
-
         .verified-tick {
             width: 18px;
             height: 18px;
             margin-left: 8px;
             vertical-align: middle;
         }
-
-        /* Modern Custom Popup Styles */
+        .toggle-container {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
         .modal {
             display: none;
             position: fixed;
@@ -100,7 +135,6 @@
             justify-content: center;
             align-items: center;
         }
-
         .modal-content {
             background-color: #222;
             padding: 20px 30px;
@@ -111,24 +145,20 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             animation: slideIn 0.3s ease-out;
         }
-
         @keyframes slideIn {
             from { transform: translateY(-50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-
         .modal-content p {
             margin: 0 0 20px 0;
             color: var(--text-color);
             font-size: 16px;
         }
-
         .modal-buttons {
             display: flex;
             justify-content: center;
             gap: 10px;
         }
-
         .modal-btn {
             background-color: var(--primary-color);
             color: var(--text-color);
@@ -139,7 +169,6 @@
             font-size: 14px;
             transition: background-color 0.3s ease;
         }
-
         .modal-btn:hover {
             background-color: var(--hover-color);
         }
@@ -160,11 +189,17 @@
         <button class="edit-btn" onclick="toggleEditUsername()">Change Username</button>
         <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
         <p id="userEmail"></p>
+        <div class="toggle-container">
+            <label for="privacyToggle">Private Account</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="privacyToggle" onchange="togglePrivacy()">
+                <span class="slider"></span>
+            </label>
+        </div>
         <button class="logout-btn" onclick="signOut()">Logout</button>
         <button class="back-btn" onclick="goBack()">Back to Home</button>
     </div>
 
-    <!-- Modern Custom Popup -->
     <div class="modal" id="modal">
         <div class="modal-content">
             <p id="modalMessage"></p>
@@ -188,7 +223,6 @@
         const modal = document.getElementById('modal');
         const modalMessage = document.getElementById('modalMessage');
 
-        // Modern Popup Function
         function showModal(message) {
             modalMessage.textContent = message;
             modal.style.display = 'flex';
@@ -196,15 +230,11 @@
 
         function closeModal(action = false) {
             modal.style.display = 'none';
-            if (action) {
-                // Handle OK action if needed
-            }
-            // Refocus the last active input
+            if (action) {}
             const activeInput = document.querySelector('.edit-input[style*="block"]');
             if (activeInput) activeInput.focus();
         }
 
-        // Event listener for outside click to close modal
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModal(false);
         });
@@ -242,6 +272,7 @@
                 document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
                 document.getElementById('userEmail').textContent = user.email;
                 document.getElementById('userUsername').textContent = `@${user.username}`;
+                document.getElementById('privacyToggle').checked = user.isPrivate || false; // Default to public
             } catch (error) {
                 console.error('Error loading profile:', error);
                 showModal(`Failed to load profile: ${error.message}`);
@@ -422,6 +453,23 @@
             }
         }
 
+        async function togglePrivacy() {
+            const isPrivate = document.getElementById('privacyToggle').checked;
+            try {
+                const userId = localStorage.getItem('userId');
+                await databases.updateDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId,
+                    { isPrivate: isPrivate }
+                );
+                showModal(`Account set to ${isPrivate ? 'private' : 'public'} successfully!`);
+            } catch (error) {
+                console.error('Error updating privacy setting:', error);
+                showModal(`Failed to update privacy setting: ${error.message}`);
+            }
+        }
+
         async function signOut() {
             try {
                 await account.deleteSession('current');
@@ -437,5 +485,5 @@
             window.location.href = 'home.html';
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b6954bfca153b7',t:'MTc0MzgzMDI4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
