@@ -6,17 +6,9 @@
     <title>User Profile - XChit</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
-        :root {
-            --bg-color: #000000;
-            --text-color: #ffffff;
-            --primary-color: #333;
-            --hover-color: #444;
-            --border-color: #ffffff;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background-color: #000000;
+            color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -30,14 +22,13 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
-            position: relative;
         }
         .user-pic {
-            width: 140px;
-            height: 140px;
+            width: 140px; /* Increased from 120px to 140px */
+            height: 140px; /* Increased from 120px to 140px */
             border-radius: 50%;
             margin-bottom: 20px;
-            border: 2px solid var(--border-color);
+            border: 2px solid #ffffff;
             transition: transform 0.3s ease;
         }
         .user-pic:hover {
@@ -58,165 +49,15 @@
             height: 16px;
             margin-left: 5px;
         }
-        .menu-container {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-        }
-        .menu-icon {
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-color);
-        }
-        .menu-options {
-            display: none;
-            position: absolute;
-            top: 30px;
-            right: 0;
-            background-color: #222;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            padding: 5px;
-            z-index: 1300;
-            min-width: 120px;
-        }
-        .menu-item {
-            padding: 5px 10px;
-            cursor: pointer;
-            color: var(--text-color);
-        }
-        .menu-item:hover {
-            background-color: var(--hover-color);
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: #222;
-            padding: 20px 30px;
-            border-radius: 10px;
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            animation: slideIn 0.3s ease-out;
-        }
-        @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .modal-content p {
-            margin: 0 0 20px 0;
-            color: var(--text-color);
-            font-size: 16px;
-        }
-        .modal-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-        .modal-btn {
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-        .modal-btn:hover {
-            background-color: var(--hover-color);
-        }
-        .modal-btn.ok {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-        }
-        .modal-btn.ok:hover {
-            background: linear-gradient(135deg, #0056b3, #003366);
-        }
-        .modal-btn.cancel {
-            background: linear-gradient(135deg, #6c757d, #5a6268);
-        }
-        .modal-btn.cancel:hover {
-            background: linear-gradient(135deg, #5a6268, #4a4e53);
-        }
-        .group-list {
-            max-height: 200px;
-            overflow-y: auto;
-            margin: 10px 0;
-        }
-        .group-item {
-            padding: 5px;
-            cursor: pointer;
-        }
-        .group-item:hover {
-            background-color: var(--hover-color);
-        }
-        .create-group-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .create-group-form input {
-            padding: 8px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            border: 1px solid #2c2c2c;
-            border-radius: 5px;
-        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="user-container">
-        <div class="menu-container">
-            <span class="menu-icon" onclick="toggleMenu(event)">⋮</span>
-            <div class="menu-options" id="menuOptions">
-                <div class="menu-item" onclick="showAddToGroupPopup(event)">Add to Group</div>
-            </div>
-        </div>
         <img id="userPic" class="user-pic" alt="User Profile Picture">
         <div class="user-info">
             <h2 id="userName" class="user-name"></h2>
             <p id="userUsername"></p>
-        </div>
-    </div>
-
-    <!-- Add to Group Popup -->
-    <div class="modal" id="addToGroupModal">
-        <div class="modal-content">
-            <p id="addToGroupMessage">Add this user to a group:</p>
-            <div class="group-list" id="groupList"></div>
-            <div class="menu-item" onclick="showCreateGroupPopup()">Create Group to Add</div>
-            <div class="modal-buttons">
-                <button class="modal-btn cancel" onclick="closeModal('addToGroupModal')">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Create Group Popup -->
-    <div class="modal" id="createGroupModal">
-        <div class="modal-content">
-            <p>Create a New Group</p>
-            <div class="create-group-form">
-                <input type="file" id="groupDpInput" accept="image/*">
-                <input type="text" id="groupNameInput" placeholder="Group Name">
-                <input type="text" id="groupUsernameInput" placeholder="@GroupUsername">
-            </div>
-            <div class="modal-buttons">
-                <button class="modal-btn ok" onclick="createGroup()">Create</button>
-                <button class="modal-btn cancel" onclick="closeModal('createGroupModal')">Cancel</button>
-            </div>
         </div>
     </div>
 
@@ -234,12 +75,10 @@
         let currentUserId, viewedUserId;
 
         window.onload = async function() {
-            console.log('Page loaded, initializing...');
             try {
                 await account.get();
                 currentUserId = localStorage.getItem('userId');
                 if (!currentUserId) {
-                    console.log('No userId in localStorage, redirecting to index.html');
                     window.location.href = 'index.html';
                     return;
                 }
@@ -247,7 +86,6 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 viewedUserId = urlParams.get('userId');
                 if (!viewedUserId) {
-                    console.log('No viewedUserId in URL, redirecting to home.html');
                     window.location.href = 'home.html';
                     return;
                 }
@@ -267,6 +105,7 @@
                     }
                 }
 
+                // Check for verified status
                 let verifiedTick = '';
                 if (user.username === 'anmolverma') {
                     verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
@@ -277,190 +116,15 @@
                 document.getElementById('userPic').src = profilePicUrl;
                 document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
                 document.getElementById('userUsername').textContent = '@' + user.username;
-                console.log('User profile loaded successfully:', user);
             } catch (error) {
                 console.error('Error loading user profile:', error);
                 window.location.href = 'home.html';
             }
-        };
-
-        function toggleMenu(event) {
-            event.stopPropagation();
-            const menuOptions = document.getElementById('menuOptions');
-            if (!menuOptions) {
-                console.error('Menu options element not found!');
-                return;
-            }
-            menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
-            console.log('Menu toggled, display:', menuOptions.style.display);
         }
 
-        function showAddToGroupPopup(event) {
-            event.stopPropagation();
-            console.log('Add to Group clicked');
-            toggleMenu(); // Close the menu
-            const modal = document.getElementById('addToGroupModal');
-            if (!modal) {
-                console.error('Add to Group modal not found!');
-                return;
-            }
-            modal.style.display = 'flex';
-            console.log('Add to Group modal display set to flex');
-            loadExistingGroups();
+        function goBack() {
+            window.location.href = `chat.html?recipientId=${viewedUserId}`;
         }
-
-        function showCreateGroupPopup() {
-            closeModal('addToGroupModal');
-            const modal = document.getElementById('createGroupModal');
-            if (!modal) {
-                console.error('Create Group modal not found!');
-                return;
-            }
-            modal.style.display = 'flex';
-            console.log('Create Group modal display set to flex');
-        }
-
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (!modal) {
-                console.error(`Modal with ID ${modalId} not found!`);
-                return;
-            }
-            modal.style.display = 'none';
-            console.log(`Modal ${modalId} closed`);
-            if (modalId === 'createGroupModal') {
-                document.getElementById('groupDpInput').value = '';
-                document.getElementById('groupNameInput').value = '';
-                document.getElementById('groupUsernameInput').value = '';
-            }
-        }
-
-        async function loadExistingGroups() {
-            try {
-                console.log('Loading existing groups...');
-                const response = await database.listDocuments(
-                    '67ed2a13003e4a7f3cf6',
-                    '67f21209001e87634168', // Updated groups collection ID
-                    [Appwrite.Query.equal('ownerId', currentUserId)]
-                );
-                const groupList = document.getElementById('groupList');
-                if (!groupList) {
-                    console.error('Group list element not found!');
-                    return;
-                }
-                groupList.innerHTML = '';
-                if (response.documents.length === 0) {
-                    groupList.innerHTML = '<p>No groups found.</p>';
-                } else {
-                    response.documents.forEach(group => {
-                        const groupItem = document.createElement('div');
-                        groupItem.className = 'group-item';
-                        groupItem.textContent = group.name;
-                        groupItem.onclick = () => addUserToGroup(group.$id);
-                        groupList.appendChild(groupItem);
-                    });
-                }
-                console.log('Groups loaded:', response.documents);
-            } catch (error) {
-                console.error('Error loading groups:', error);
-                document.getElementById('groupList').innerHTML = '<p>Error loading groups.</p>';
-            }
-        }
-
-        async function addUserToGroup(groupId) {
-            try {
-                const group = await database.getDocument(
-                    '67ed2a13003e4a7f3cf6',
-                    '67f21209001e87634168',
-                    groupId
-                );
-                const members = group.members || [];
-                if (!members.includes(viewedUserId)) {
-                    members.push(viewedUserId);
-                    await database.updateDocument(
-                        '67ed2a13003e4a7f3cf6',
-                        '67f21209001e87634168',
-                        groupId,
-                        { members }
-                    );
-                    alert('User added to group successfully!');
-                    closeModal('addToGroupModal');
-                } else {
-                    alert('User is already in this group.');
-                }
-            } catch (error) {
-                console.error('Error adding user to group:', error);
-                alert('Failed to add user to group: ' + error.message);
-            }
-        }
-
-        async function createGroup() {
-            const groupName = document.getElementById('groupNameInput').value.trim();
-            const groupUsername = document.getElementById('groupUsernameInput').value.trim().replace('@', '').toLowerCase();
-            const groupDpInput = document.getElementById('groupDpInput').files[0];
-
-            if (!groupName || !groupUsername) {
-                alert('Group name and username are required.');
-                return;
-            }
-
-            try {
-                const usernameCheck = await database.listDocuments(
-                    '67ed2a13003e4a7f3cf6',
-                    '67f21209001e87634168',
-                    [Appwrite.Query.equal('username', groupUsername)]
-                );
-                if (usernameCheck.total > 0) {
-                    alert('Group username is already taken.');
-                    return;
-                }
-
-                let groupDpId = defaultDP;
-                if (groupDpInput) {
-                    const dpResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), groupDpInput);
-                    groupDpId = dpResponse.$id;
-                }
-
-                const groupData = {
-                    name: groupName,
-                    username: groupUsername,
-                    ownerId: currentUserId,
-                    members: [viewedUserId],
-                    profilepicture: groupDpId,
-                    createdAt: new Date().toISOString()
-                };
-
-                await database.createDocument(
-                    '67ed2a13003e4a7f3cf6',
-                    '67f21209001e87634168',
-                    Appwrite.ID.unique(),
-                    groupData
-                );
-
-                alert('Group created successfully!');
-                closeModal('createGroupModal');
-            } catch (error) {
-                console.error('Error creating group:', error);
-                alert('Failed to create group: ' + error.message);
-            }
-        }
-
-        document.addEventListener('click', function(event) {
-            const menuContainer = document.querySelector('.menu-container');
-            const addToGroupModal = document.getElementById('addToGroupModal');
-            const createGroupModal = document.getElementById('createGroupModal');
-
-            if (!menuContainer.contains(event.target)) {
-                const menuOptions = document.getElementById('menuOptions');
-                if (menuOptions) menuOptions.style.display = 'none';
-            }
-            if (addToGroupModal && addToGroupModal.style.display === 'flex' && !addToGroupModal.querySelector('.modal-content').contains(event.target)) {
-                closeModal('addToGroupModal');
-            }
-            if (createGroupModal && createGroupModal.style.display === 'flex' && !createGroupModal.querySelector('.modal-content').contains(event.target)) {
-                closeModal('createGroupModal');
-            }
-        });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b916904c55b03b',t:'MTc0Mzg1NjU1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
