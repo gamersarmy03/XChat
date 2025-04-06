@@ -311,7 +311,7 @@
                         [
                             Appwrite.Query.search('username', searchTerm),
                             Appwrite.Query.notEqual('$id', currentUserId),
-                            Appwrite.Query.equal('isPrivate', false) // Only show public accounts
+                            Appwrite.Query.equal('isPrivate', false) // Only public accounts
                         ]
                     );
 
@@ -328,11 +328,13 @@
                         });
                         suggestions.style.display = 'block';
                     } else {
-                        suggestions.style.display = 'none';
+                        suggestions.innerHTML = '<div class="suggestion-item">No public users found</div>';
+                        suggestions.style.display = 'block';
                     }
                 } catch (error) {
                     console.error('Error searching users:', error);
-                    suggestions.style.display = 'none';
+                    suggestions.innerHTML = '<div class="suggestion-item">Error loading suggestions</div>';
+                    suggestions.style.display = 'block';
                 }
             } else {
                 suggestions.style.display = 'none';
