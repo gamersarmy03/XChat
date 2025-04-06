@@ -22,10 +22,11 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
+            position: relative;
         }
         .user-pic {
-            width: 140px; /* Increased from 120px to 140px */
-            height: 140px; /* Increased from 120px to 140px */
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             margin-bottom: 20px;
             border: 2px solid #ffffff;
@@ -49,15 +50,154 @@
             height: 16px;
             margin-left: 5px;
         }
+        .menu-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .menu-icon {
+            font-size: 24px;
+            cursor: pointer;
+            color: #ffffff;
+        }
+        .menu-options {
+            display: none;
+            position: absolute;
+            top: 30px;
+            right: 0;
+            background-color: #222;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            z-index: 1300;
+            min-width: 120px;
+        }
+        .menu-item {
+            padding: 5px 10px;
+            cursor: pointer;
+            color: #ffffff;
+        }
+        .menu-item:hover {
+            background-color: #333;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            color: #ffffff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .modal-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            color: #ffffff;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        .modal-btn.ok {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+        .modal-btn.ok:hover {
+            background: linear-gradient(135deg, #0056b3, #003366);
+            transform: translateY(-2px);
+        }
+        .modal-btn.cancel {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+        }
+        .modal-btn.cancel:hover {
+            background: linear-gradient(135deg, #5a6268, #4a4e53);
+            transform: translateY(-2px);
+        }
+        .group-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .group-item {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .group-item:hover {
+            background-color: #333;
+        }
+        .create-group-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .create-group-form input {
+            padding: 8px;
+            background-color: #000000;
+            color: #ffffff;
+            border: 1px solid #2c2c2c;
+            border-radius: 5px;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
     <div class="user-container">
+        <div class="menu-container">
+            <span class="menu-icon" onclick="toggleMenu(event)">⋮</span>
+            <div class="menu-options" id="menuOptions">
+                <div class="menu-item" onclick="showAddToGroupPopup(event)">Add to Group</div>
+            </div>
+        </div>
         <img id="userPic" class="user-pic" alt="User Profile Picture">
         <div class="user-info">
             <h2 id="userName" class="user-name"></h2>
             <p id="userUsername"></p>
+        </div>
+    </div>
+
+    <!-- Add to Group Popup -->
+    <div class="modal" id="addToGroupModal">
+        <div class="modal-content">
+            <p>Add this user to a group:</p>
+            <div class="group-list" id="groupList"></div>
+            <div class="menu-item" onclick="showCreateGroupPopup()">Create Group to Add</div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeAddToGroupPopup()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Popup -->
+    <div class="modal" id="createGroupModal">
+        <div class="modal-content">
+            <p>Create a New Group</p>
+            <div class="create-group-form">
+                <input type="file" id="groupDpInput" accept="image/*">
+                <input type="text" id="groupNameInput" placeholder="Group Name">
+                <input type="text" id="groupUsernameInput" placeholder="@GroupUsername">
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn ok" onclick="createGroup()">Create</button>
+                <button class="modal-btn cancel" onclick="closeCreateGroupPopup()">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -105,7 +245,6 @@
                     }
                 }
 
-                // Check for verified status
                 let verifiedTick = '';
                 if (user.username === 'anmolverma') {
                     verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
@@ -120,11 +259,148 @@
                 console.error('Error loading user profile:', error);
                 window.location.href = 'home.html';
             }
+        };
+
+        function toggleMenu(event) {
+            event.stopPropagation();
+            const menuOptions = document.getElementById('menuOptions');
+            menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
         }
 
-        function goBack() {
-            window.location.href = `chat.html?recipientId=${viewedUserId}`;
+        function showAddToGroupPopup(event) {
+            event.stopPropagation();
+            toggleMenu();
+            const modal = document.getElementById('addToGroupModal');
+            modal.style.display = 'flex';
+            loadExistingGroups();
         }
+
+        function closeAddToGroupPopup() {
+            const modal = document.getElementById('addToGroupModal');
+            modal.style.display = 'none';
+        }
+
+        async function loadExistingGroups() {
+            try {
+                const response = await database.listDocuments(
+                    '67ed2a13003e4a7f3cf6',
+                    'groups', // Assuming a new collection ID for groups
+                    [Appwrite.Query.equal('ownerId', currentUserId)]
+                );
+                const groupList = document.getElementById('groupList');
+                groupList.innerHTML = '';
+                response.documents.forEach(group => {
+                    const groupItem = document.createElement('div');
+                    groupItem.className = 'group-item';
+                    groupItem.textContent = group.name;
+                    groupItem.onclick = () => addUserToGroup(group.$id);
+                    groupList.appendChild(groupItem);
+                });
+            } catch (error) {
+                console.error('Error loading groups:', error);
+            }
+        }
+
+        async function addUserToGroup(groupId) {
+            try {
+                const group = await database.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    'groups',
+                    groupId
+                );
+                const members = group.members || [];
+                if (!members.includes(viewedUserId)) {
+                    members.push(viewedUserId);
+                    await database.updateDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        'groups',
+                        groupId,
+                        { members }
+                    );
+                    alert('User added to group successfully!');
+                    closeAddToGroupPopup();
+                } else {
+                    alert('User is already in this group.');
+                }
+            } catch (error) {
+                console.error('Error adding user to group:', error);
+                alert('Failed to add user to group: ' + error.message);
+            }
+        }
+
+        function showCreateGroupPopup() {
+            closeAddToGroupPopup();
+            const modal = document.getElementById('createGroupModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeCreateGroupPopup() {
+            const modal = document.getElementById('createGroupModal');
+            modal.style.display = 'none';
+            document.getElementById('groupDpInput').value = '';
+            document.getElementById('groupNameInput').value = '';
+            document.getElementById('groupUsernameInput').value = '';
+        }
+
+        async function createGroup() {
+            const groupName = document.getElementById('groupNameInput').value.trim();
+            const groupUsername = document.getElementById('groupUsernameInput').value.trim().replace('@', '').toLowerCase();
+            const groupDpInput = document.getElementById('groupDpInput').files[0];
+
+            if (!groupName || !groupUsername) {
+                alert('Group name and username are required.');
+                return;
+            }
+
+            try {
+                const usernameCheck = await database.listDocuments(
+                    '67ed2a13003e4a7f3cf6',
+                    'groups',
+                    [Appwrite.Query.equal('username', groupUsername)]
+                );
+                if (usernameCheck.total > 0) {
+                    alert('Group username is already taken.');
+                    return;
+                }
+
+                let groupDpId = defaultDP;
+                if (groupDpInput) {
+                    const dpResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), groupDpInput);
+                    groupDpId = dpResponse.$id;
+                }
+
+                const groupData = {
+                    name: groupName,
+                    username: groupUsername,
+                    ownerId: currentUserId,
+                    members: [viewedUserId],
+                    profilepicture: groupDpId,
+                    createdAt: new Date().toISOString()
+                };
+
+                await database.createDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    'groups', // New collection ID needed
+                    Appwrite.ID.unique(),
+                    groupData
+                );
+
+                alert('Group created successfully!');
+                closeCreateGroupPopup();
+                closeAddToGroupPopup();
+                // Optionally redirect or refresh
+            } catch (error) {
+                console.error('Error creating group:', error);
+                alert('Failed to create group: ' + error.message);
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const menuContainer = document.querySelector('.menu-container');
+            if (!menuContainer.contains(event.target)) {
+                document.getElementById('menuOptions').style.display = 'none';
+            }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b916904c55b03b',t:'MTc0Mzg1NjU1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
