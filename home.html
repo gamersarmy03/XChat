@@ -14,14 +14,19 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
         .header {
             padding: 10px;
-            position: relative;
+            position: fixed;
+            top: 0;
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
             background-color: #000000;
+            z-index: 1000;
+            box-sizing: border-box;
         }
         .hamburger {
             font-size: 24px;
@@ -63,6 +68,7 @@
             border-radius: 5px;
             padding: 5px;
             width: 200px;
+            z-index: 1100;
         }
         .suggestions {
             position: absolute;
@@ -76,6 +82,7 @@
             max-height: 150px;
             overflow-y: auto;
             display: none;
+            z-index: 1100;
         }
         .suggestion-item {
             padding: 5px;
@@ -86,11 +93,12 @@
         }
         .content {
             flex: 1;
-            padding: 10px;
+            padding: 60px 10px 10px 10px; /* Adjusted for fixed header */
             overflow-y: auto;
+            box-sizing: border-box;
         }
         .conversation-list {
-            margin-top: 20px;
+            margin-top: 0;
         }
         .conversation-item {
             padding: 10px;
@@ -130,12 +138,13 @@
         .message-notification {
             position: fixed;
             bottom: 20px;
-            right: 80px; /* Adjusted to accommodate the + button */
+            right: 80px;
             background-color: #333;
             padding: 10px;
             border-radius: 5px;
             display: none;
             cursor: pointer;
+            z-index: 1000;
         }
         .create-group-btn {
             position: fixed;
@@ -154,6 +163,7 @@
             align-items: center;
             box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
             transition: transform 0.3s ease, background 0.3s ease;
+            z-index: 1000;
         }
         .create-group-btn:hover {
             background: linear-gradient(135deg, #0056b3, #003366);
@@ -167,7 +177,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
+            z-index: 1200;
             justify-content: center;
             align-items: center;
         }
@@ -277,18 +287,12 @@
 
         window.onload = async function() {
             try {
-                await account.get();
+                const user = await account.get();
                 currentUserId = localStorage.getItem('userId');
                 if (!currentUserId) {
                     window.location.href = 'index.html';
                     return;
                 }
-
-                await database.getDocument(
-                    '67ed2a13003e4a7f3cf6',
-                    '67ee9da70025aa03c173',
-                    currentUserId
-                );
 
                 await loadConversationsAndGroups();
                 subscribeToMessages();
@@ -304,7 +308,8 @@
 
         function toggleSearch() {
             const searchInput = document.getElementById('searchInput');
-            searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
+            const currentDisplay = searchInput.style.display;
+            searchInput.style.display = currentDisplay === 'block' ? 'none' : 'block';
             document.getElementById('suggestions').style.display = 'none';
             if (searchInput.style.display === 'block') {
                 searchInput.focus();
@@ -317,8 +322,6 @@
 
             if (query.startsWith('@') && query.length > 1) {
                 const searchTerm = query.slice(1).toLowerCase();
-                console.log('Searching for:', searchTerm);
-
                 try {
                     const userResponse = await database.listDocuments(
                         '67ed2a13003e4a7f3cf6',
@@ -376,6 +379,9 @@
         }
 
         async function loadConversationsAndGroups() {
+            const conversationList = document.getElementById('conversationList');
+            conversationList.innerHTML = '<p>Loading...</p>';
+
             try {
                 // Load Conversations
                 const messageResponse = await database.listDocuments(
@@ -391,13 +397,18 @@
                 );
 
                 // Load Groups
-                const groupResponse = await database.listDocuments(
-                    groupsCollectionId,
-                    groupsCollectionId,
-                    [Appwrite.Query.contains('members', currentUserId)]
-                );
+                let groupResponse;
+                try {
+                    groupResponse = await database.listDocuments(
+                        groupsCollectionId,
+                        groupsCollectionId,
+                        [Appwrite.Query.contains('members', currentUserId)]
+                    );
+                } catch (error) {
+                    console.warn('Groups collection may not exist yet:', error);
+                    groupResponse = { documents: [] };
+                }
 
-                const conversationList = document.getElementById('conversationList');
                 conversationList.innerHTML = '';
 
                 // Process Conversations
@@ -411,13 +422,13 @@
                 });
 
                 const sortedConversations = Object.entries(conversations).sort(([, messagesA], [, messagesB]) => {
-                    const latestMessageA = messagesA[0];
-                    const latestMessageB = messagesB[0];
+                    const latestMessageA = messagesA[messagesA.length - 1];
+                    const latestMessageB = messagesB[messagesB.length - 1];
                     return new Date(latestMessageB.timestamp) - new Date(latestMessageA.timestamp);
                 });
 
                 for (const [otherUserId, messages] of sortedConversations) {
-                    const latestMessage = messages[0];
+                    const latestMessage = messages[messages.length - 1];
                     const otherUser = await database.getDocument(
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
@@ -482,6 +493,7 @@
                 }
             } catch (error) {
                 console.error('Error loading conversations and groups:', error);
+                conversationList.innerHTML = '<p>Error loading conversations. Please try again later.</p>';
             }
         }
 
@@ -516,6 +528,7 @@
         }
 
         function showCreateGroupPopup() {
+            console.log('Showing create group popup');
             const modal = document.getElementById('createGroupModal');
             modal.style.display = 'flex';
             document.getElementById('groupPicInput').value = '';
@@ -526,6 +539,7 @@
         }
 
         function closeCreateGroupPopup() {
+            console.log('Closing create group popup');
             document.getElementById('createGroupModal').style.display = 'none';
         }
 
@@ -554,7 +568,6 @@
             }
 
             try {
-                // Check if group username is unique
                 const groupCheck = await database.listDocuments(
                     groupsCollectionId,
                     groupsCollectionId,
@@ -565,9 +578,8 @@
                     return;
                 }
 
-                // Resolve member usernames to user IDs
                 const memberUsernames = membersInput.split('\n').map(u => u.trim().toLowerCase().replace('@', '')).filter(u => u);
-                const members = [currentUserId]; // Owner is automatically a member
+                const members = [currentUserId];
                 for (const username of memberUsernames) {
                     if (username) {
                         const userResponse = await database.listDocuments(
@@ -581,7 +593,7 @@
                                 members.push(userId);
                             }
                         } else {
-                            alert(`User @${username} not found. Skipping this member.`);
+                            console.warn(`User @${username} not found. Skipping.`);
                         }
                     }
                 }
@@ -592,7 +604,6 @@
                     groupPictureId = uploadResponse.$id;
                 }
 
-                // Create the group
                 await database.createDocument(
                     groupsCollectionId,
                     groupsCollectionId,
@@ -616,7 +627,7 @@
         }
 
         document.addEventListener('click', function(event) {
-            const searchContainer = document.getElementsByClassName('search-container')[0];
+            const searchContainer = document.querySelector('.search-container');
             const modal = document.getElementById('createGroupModal');
             if (!searchContainer.contains(event.target) && event.target !== document.getElementById('searchInput')) {
                 document.getElementById('searchInput').style.display = 'none';
