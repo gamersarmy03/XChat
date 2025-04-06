@@ -6,9 +6,17 @@
     <title>User Profile - XChit</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --primary-color: #333;
+            --hover-color: #444;
+            --border-color: #ffffff;
+        }
+
         body {
-            background-color: #000000;
-            color: #ffffff;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -29,7 +37,7 @@
             height: 140px;
             border-radius: 50%;
             margin-bottom: 20px;
-            border: 2px solid #ffffff;
+            border: 2px solid var(--border-color);
             transition: transform 0.3s ease;
         }
         .user-pic:hover {
@@ -58,7 +66,7 @@
         .menu-icon {
             font-size: 24px;
             cursor: pointer;
-            color: #ffffff;
+            color: var(--text-color);
         }
         .menu-options {
             display: none;
@@ -66,7 +74,7 @@
             top: 30px;
             right: 0;
             background-color: #222;
-            border: 1px solid #ffffff;
+            border: 1px solid var(--border-color);
             border-radius: 5px;
             padding: 5px;
             z-index: 1300;
@@ -75,11 +83,12 @@
         .menu-item {
             padding: 5px 10px;
             cursor: pointer;
-            color: #ffffff;
+            color: var(--text-color);
         }
         .menu-item:hover {
-            background-color: #333;
+            background-color: var(--hover-color);
         }
+        /* Modern Custom Popup Styles */
         .modal {
             display: none;
             position: fixed;
@@ -94,41 +103,52 @@
         }
         .modal-content {
             background-color: #222;
-            padding: 20px;
+            padding: 20px 30px;
             border-radius: 10px;
             text-align: center;
             width: 90%;
             max-width: 400px;
-            color: #ffffff;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-content p {
+            margin: 0 0 20px 0;
+            color: var(--text-color);
+            font-size: 16px;
         }
         .modal-buttons {
-            margin-top: 20px;
             display: flex;
             justify-content: center;
             gap: 10px;
         }
         .modal-btn {
-            padding: 8px 18px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 10px 20px;
             border: none;
-            border-radius: 25px;
+            border-radius: 5px;
             cursor: pointer;
-            color: #ffffff;
-            transition: background 0.3s ease, transform 0.2s ease;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        .modal-btn:hover {
+            background-color: var(--hover-color);
         }
         .modal-btn.ok {
             background: linear-gradient(135deg, #007bff, #0056b3);
         }
         .modal-btn.ok:hover {
             background: linear-gradient(135deg, #0056b3, #003366);
-            transform: translateY(-2px);
         }
         .modal-btn.cancel {
             background: linear-gradient(135deg, #6c757d, #5a6268);
         }
         .modal-btn.cancel:hover {
             background: linear-gradient(135deg, #5a6268, #4a4e53);
-            transform: translateY(-2px);
         }
         .group-list {
             max-height: 200px;
@@ -140,7 +160,7 @@
             cursor: pointer;
         }
         .group-item:hover {
-            background-color: #333;
+            background-color: var(--hover-color);
         }
         .create-group-form {
             display: flex;
@@ -150,8 +170,8 @@
         }
         .create-group-form input {
             padding: 8px;
-            background-color: #000000;
-            color: #ffffff;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             border: 1px solid #2c2c2c;
             border-radius: 5px;
         }
@@ -176,11 +196,11 @@
     <!-- Add to Group Popup -->
     <div class="modal" id="addToGroupModal">
         <div class="modal-content">
-            <p>Add this user to a group:</p>
+            <p id="addToGroupMessage">Add this user to a group:</p>
             <div class="group-list" id="groupList"></div>
             <div class="menu-item" onclick="showCreateGroupPopup()">Create Group to Add</div>
             <div class="modal-buttons">
-                <button class="modal-btn cancel" onclick="closeAddToGroupPopup()">Cancel</button>
+                <button class="modal-btn cancel" onclick="closeModal('addToGroupModal')">Cancel</button>
             </div>
         </div>
     </div>
@@ -196,7 +216,7 @@
             </div>
             <div class="modal-buttons">
                 <button class="modal-btn ok" onclick="createGroup()">Create</button>
-                <button class="modal-btn cancel" onclick="closeCreateGroupPopup()">Cancel</button>
+                <button class="modal-btn cancel" onclick="closeModal('createGroupModal')">Cancel</button>
             </div>
         </div>
     </div>
@@ -265,39 +285,60 @@
             event.stopPropagation();
             const menuOptions = document.getElementById('menuOptions');
             menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
+            console.log('Menu toggled:', menuOptions.style.display); // Debug
         }
 
         function showAddToGroupPopup(event) {
             event.stopPropagation();
-            toggleMenu();
+            toggleMenu(); // Close the menu
             const modal = document.getElementById('addToGroupModal');
+            console.log('Showing Add to Group popup'); // Debug
             modal.style.display = 'flex';
             loadExistingGroups();
         }
 
-        function closeAddToGroupPopup() {
-            const modal = document.getElementById('addToGroupModal');
+        function showCreateGroupPopup() {
+            closeModal('addToGroupModal');
+            const modal = document.getElementById('createGroupModal');
+            console.log('Showing Create Group popup'); // Debug
+            modal.style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            console.log(`Closing modal: ${modalId}`); // Debug
             modal.style.display = 'none';
+            if (modalId === 'createGroupModal') {
+                document.getElementById('groupDpInput').value = '';
+                document.getElementById('groupNameInput').value = '';
+                document.getElementById('groupUsernameInput').value = '';
+            }
         }
 
         async function loadExistingGroups() {
             try {
                 const response = await database.listDocuments(
                     '67ed2a13003e4a7f3cf6',
-                    'groups', // Assuming a new collection ID for groups
+                    '67f21209001e87634168', // Replace with your actual groups collection ID
                     [Appwrite.Query.equal('ownerId', currentUserId)]
                 );
                 const groupList = document.getElementById('groupList');
                 groupList.innerHTML = '';
-                response.documents.forEach(group => {
-                    const groupItem = document.createElement('div');
-                    groupItem.className = 'group-item';
-                    groupItem.textContent = group.name;
-                    groupItem.onclick = () => addUserToGroup(group.$id);
-                    groupList.appendChild(groupItem);
-                });
+                if (response.documents.length === 0) {
+                    groupList.innerHTML = '<p>No groups found.</p>';
+                } else {
+                    response.documents.forEach(group => {
+                        const groupItem = document.createElement('div');
+                        groupItem.className = 'group-item';
+                        groupItem.textContent = group.name;
+                        groupItem.onclick = () => addUserToGroup(group.$id);
+                        groupList.appendChild(groupItem);
+                    });
+                }
+                console.log('Groups loaded:', response.documents); // Debug
             } catch (error) {
                 console.error('Error loading groups:', error);
+                document.getElementById('groupList').innerHTML = '<p>Error loading groups.</p>';
             }
         }
 
@@ -318,7 +359,7 @@
                         { members }
                     );
                     alert('User added to group successfully!');
-                    closeAddToGroupPopup();
+                    closeModal('addToGroupModal');
                 } else {
                     alert('User is already in this group.');
                 }
@@ -326,20 +367,6 @@
                 console.error('Error adding user to group:', error);
                 alert('Failed to add user to group: ' + error.message);
             }
-        }
-
-        function showCreateGroupPopup() {
-            closeAddToGroupPopup();
-            const modal = document.getElementById('createGroupModal');
-            modal.style.display = 'flex';
-        }
-
-        function closeCreateGroupPopup() {
-            const modal = document.getElementById('createGroupModal');
-            modal.style.display = 'none';
-            document.getElementById('groupDpInput').value = '';
-            document.getElementById('groupNameInput').value = '';
-            document.getElementById('groupUsernameInput').value = '';
         }
 
         async function createGroup() {
@@ -380,25 +407,33 @@
 
                 await database.createDocument(
                     '67ed2a13003e4a7f3cf6',
-                    'groups', // New collection ID needed
+                    '67f21209001e87634168', // Replace with your actual groups collection ID
                     Appwrite.ID.unique(),
                     groupData
                 );
 
                 alert('Group created successfully!');
-                closeCreateGroupPopup();
-                closeAddToGroupPopup();
-                // Optionally redirect or refresh
+                closeModal('createGroupModal');
             } catch (error) {
                 console.error('Error creating group:', error);
                 alert('Failed to create group: ' + error.message);
             }
         }
 
+        // Close menu or modals when clicking outside
         document.addEventListener('click', function(event) {
             const menuContainer = document.querySelector('.menu-container');
+            const addToGroupModal = document.getElementById('addToGroupModal');
+            const createGroupModal = document.getElementById('createGroupModal');
+
             if (!menuContainer.contains(event.target)) {
                 document.getElementById('menuOptions').style.display = 'none';
+            }
+            if (addToGroupModal.style.display === 'flex' && !addToGroupModal.querySelector('.modal-content').contains(event.target)) {
+                closeModal('addToGroupModal');
+            }
+            if (createGroupModal.style.display === 'flex' && !createGroupModal.querySelector('.modal-content').contains(event.target)) {
+                closeModal('createGroupModal');
             }
         });
     </script>
