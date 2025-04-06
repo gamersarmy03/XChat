@@ -14,6 +14,7 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* Prevent body scroll, managed by chat-history */
         }
         .header {
             padding: 10px;
@@ -21,11 +22,13 @@
             justify-content: space-between;
             align-items: center;
             background-color: #000000;
-            position: fixed; /* Restored fixed positioning */
+            position: fixed;
             top: 0;
             width: 100%;
             z-index: 1100;
             border-bottom: 1px solid #333;
+            height: 50px; /* Explicit height for consistency */
+            box-sizing: border-box;
         }
         .profile-container {
             display: flex;
@@ -63,7 +66,7 @@
         .menu-container {
             padding: 5px;
             position: relative;
-            z-index: 1200; /* Ensure menu is above other elements */
+            z-index: 1200; /* Ensure menu is above header content */
         }
         .menu-icon {
             font-size: 24px;
@@ -81,7 +84,7 @@
             border: 1px solid #ffffff;
             border-radius: 5px;
             padding: 5px;
-            z-index: 1300; /* Higher than header to ensure visibility */
+            z-index: 1300; /* Ensure dropdown is above all */
             min-width: 120px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
@@ -98,13 +101,15 @@
             display: flex;
             flex-direction: column;
             padding: 10px;
-            margin-top: 60px; /* Space for fixed header */
-            margin-bottom: 60px; /* Space for fixed input */
+            margin-top: 60px; /* Space for header (50px + padding) */
+            margin-bottom: 60px; /* Space for input (50px + padding) */
+            overflow: hidden; /* Prevent container overflow */
         }
         .chat-history {
             flex: 1;
             overflow-y: auto;
             padding: 10px;
+            padding-bottom: 70px; /* Extra padding to prevent overlap with input */
         }
         .message {
             margin-bottom: 12px;
@@ -148,11 +153,12 @@
             background-color: #000000;
             border-top: 1px solid #333;
             align-items: center;
-            position: fixed; /* Restored fixed positioning */
+            position: fixed;
             bottom: 0;
             width: 100%;
             z-index: 1000;
             box-sizing: border-box;
+            height: 50px; /* Explicit height for consistency */
         }
         .chat-input input {
             flex: 1;
