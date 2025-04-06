@@ -76,7 +76,7 @@
             max-height: 150px;
             overflow-y: auto;
             display: none;
-            z-index: 1000; /* Ensure suggestions appear above other elements */
+            z-index: 1000;
         }
         .suggestion-item {
             padding: 5px;
@@ -178,7 +178,7 @@
             text-align: center;
             width: 90%;
             max-width: 400px;
-            color    color: #ffffff;
+            color: #ffffff;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
         }
         .modal-content label {
@@ -234,7 +234,6 @@
     </div>
     <div class="message-notification" id="messageNotification"></div>
 
-    <!-- Delete Chat Popup -->
     <div class="modal" id="deleteChatModal">
         <div class="modal-content">
             <p>Are you sure you want to delete this chat?</p>
@@ -293,7 +292,7 @@
             const searchInput = document.getElementById('searchInput');
             const suggestions = document.getElementById('suggestions');
             searchInput.style.display = searchInput.style.display === 'block' ? 'none' : 'block';
-            suggestions.style.display = 'none'; // Hide suggestions when toggling
+            suggestions.style.display = 'none';
             if (searchInput.style.display === 'block') {
                 searchInput.focus();
             }
@@ -310,8 +309,9 @@
                         '67ed2a13003e4a7f3cf6',
                         '67ee9da70025aa03c173',
                         [
-                            Appwrite.Query.search('username', searchTerm), // Use search for partial matches
-                            Appwrite.Query.notEqual('$id', currentUserId)
+                            Appwrite.Query.search('username', searchTerm),
+                            Appwrite.Query.notEqual('$id', currentUserId),
+                            Appwrite.Query.equal('isPrivate', false) // Only show public accounts
                         ]
                     );
 
@@ -536,19 +536,16 @@
             const searchInput = document.getElementById('searchInput');
             const suggestions = document.getElementById('suggestions');
 
-            // Handle modal
             if (modal.style.display === 'flex' && !modal.contains(event.target)) {
-                return; // Don't interfere with modal
+                return;
             }
 
-            // Handle context menus
             contextMenus.forEach(menu => {
                 if (!menu.contains(event.target)) {
                     menu.style.display = 'none';
                 }
             });
 
-            // Handle search input and suggestions
             if (!searchContainer.contains(event.target) && event.target !== searchInput) {
                 searchInput.style.display = 'none';
                 suggestions.style.display = 'none';
