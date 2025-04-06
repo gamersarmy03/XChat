@@ -109,7 +109,8 @@
             flex: 1;
             overflow-y: auto;
             padding: 10px;
-            padding-bottom: 70px; /* Extra padding to prevent overlap with input */
+            padding-bottom: 60px; /* Adjusted to match input height + padding, preventing overlap */
+            max-height: calc(100vh - 120px); /* Limit height to fit between header and input */
         }
         .message {
             margin-bottom: 12px;
