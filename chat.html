@@ -253,24 +253,20 @@
     /* Custom Scrollbar Styles */
     /* For WebKit-based browsers (Chrome, Safari, Edge) */
     ::-webkit-scrollbar {
-        width: 8px; /* Thinner scrollbar */
+        width: 6px; /* Thinner scrollbar */
     }
     ::-webkit-scrollbar-track {
-        background: #1a1a1a; /* Dark grayish-black track */
-        border-radius: 10px;
+        background: #000000; /* Pure black track */
+        border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #007bff, #003366); /* Blue gradient */
-        border-radius: 10px;
-        border: 1px solid #000000; /* Black border */
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, #0056b3, #001933); /* Darker blue on hover */
+        background: #0056b3; /* Solid dark blue thumb */
+        border-radius: 3px;
     }
     /* For Firefox */
     .chat-history {
         scrollbar-width: thin; /* Thinner scrollbar */
-        scrollbar-color: #007bff #1a1a1a; /* Blue thumb, dark gray track */
+        scrollbar-color: #0056b3 #000000; /* Dark blue thumb, black track */
     }
 </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
