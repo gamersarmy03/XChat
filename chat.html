@@ -250,6 +250,28 @@
             background: linear-gradient(135deg, #5a6268, #4a4e53);
             transform: translateY(-2px);
         }
+        /* Custom Scrollbar Styles */
+        /* For WebKit-based browsers (Chrome, Safari, Edge) */
+        ::-webkit-scrollbar {
+            width: 8px; /* Thinner scrollbar */
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a; /* Dark grayish-black track */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #007bff, #003366); /* Blue gradient */
+            border-radius: 10px;
+            border: 1px solid #000000; /* Black border */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #0056b3, #001933); /* Darker blue on hover */
+        }
+        /* For Firefox */
+        .chat-history {
+            scrollbar-width: thin; /* Thinner scrollbar */
+            scrollbar-color: #007bff #1a1a1a; /* Blue thumb, dark gray track */
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
@@ -543,5 +565,5 @@
             }
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e1de7fe85253ff',t:'MTc0NDI4NDE3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
