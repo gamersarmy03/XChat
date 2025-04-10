@@ -250,7 +250,7 @@
         background: linear-gradient(135deg, #5a6268, #4a4e53);
         transform: translateY(-2px);
     }
-    /* Custom Scrollbar Styles */
+    /* Custom Animated Scrollbar Styles */
     /* For WebKit-based browsers (Chrome, Safari, Edge) */
     ::-webkit-scrollbar {
         width: 6px; /* Thinner scrollbar */
@@ -260,13 +260,31 @@
         border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb {
-        background: #0056b3; /* Solid dark blue thumb */
+        background: linear-gradient(90deg, #007bff, #0056b3); /* Initial gradient */
         border-radius: 3px;
+        animation: slideGradient 2s linear infinite; /* Animation applied */
+    }
+    /* Animation for gradient slide */
+    @keyframes slideGradient {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+    /* Optional: Pause animation on hover */
+    ::-webkit-scrollbar-thumb:hover {
+        animation-play-state: paused;
+        background: linear-gradient(90deg, #0056b3, #007bff); /* Reverse gradient on hover */
     }
     /* For Firefox */
     .chat-history {
         scrollbar-width: thin; /* Thinner scrollbar */
-        scrollbar-color: #0056b3 #000000; /* Dark blue thumb, black track */
+        scrollbar-color: #007bff #000000; /* Static color for Firefox */
     }
 </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
