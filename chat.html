@@ -103,16 +103,10 @@
         flex-direction: column;
         padding: 0;
         margin-top: 60px;
+        margin-bottom: 60px; /* Space for input bar */
         box-sizing: border-box;
         position: relative;
         overflow: hidden;
-    }
-    .chat-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        position: relative;
     }
     .chat-history {
         flex: 1;
@@ -168,7 +162,7 @@
         background-color: #000000;
         border-top: 1px solid #333;
         align-items: center;
-        position: absolute;
+        position: fixed;
         bottom: 0;
         width: 100%;
         z-index: 1000;
@@ -298,9 +292,7 @@
         </div>
     </div>
     <div class="chat-container">
-        <div class="chat-content">
-            <div class="chat-history" id="chatHistory"></div>
-        </div>
+        <div class="chat-history" id="chatHistory"></div>
         <div class="chat-input">
             <input type="text" id="messageInput" placeholder="Type a message..." onkeyup="sendMessage(event)" onfocus="onInputFocus()" onblur="onInputBlur()">
             <button onclick="sendMessage()">Send</button>
