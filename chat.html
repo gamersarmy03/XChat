@@ -74,9 +74,6 @@
         color: #ffffff;
         display: block;
         line-height: 1;
-        /* Fallback if ⋮ doesn't render */
-        /* Uncomment the following if needed: */
-        /* background-color: red; */ /* For debugging */
     }
     .menu-options {
         display: none;
@@ -103,67 +100,60 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 0; /* Remove padding to avoid extra space */
-        margin-top: 60px; /* Header height + padding */
-        margin-bottom: 60px; /* Input height + padding */
+        padding: 0;
+        margin-top: 60px;
+        margin-bottom: 60px;
         overflow: hidden;
         box-sizing: border-box;
     }
     .chat-history {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    padding-bottom: 50px; /* Match input height to prevent overlap */
-    max-height: calc(100vh - 110px); /* Adjusted height */
-    box-sizing: border-box;
-    display: flex; /* Add flex to container */
-    flex-direction: column; /* Stack messages vertically */
-    gap: 10px; /* Optional: Adds spacing between messages */
-}
-
-.message {
-    padding: 8px 12px;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-    border: 1px solid #444;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    position: relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    word-wrap: break-word;
-    /* Dynamic width with min and max constraints */
-    min-width: 50px; /* Minimum width for short messages */
-    max-width: 65%; /* Maximum width limit */
-    align-self: flex-start; /* Default alignment for received messages */
-}
-
-.message.sent {
-    background: linear-gradient(135deg, #0066cc, #003366);
-    border-color: #0056b3;
-    align-self: flex-end; /* Align sent messages to the right */
-    text-align: right;
-}
-
-.message.received {
-    background: linear-gradient(135deg, #333333, #444444);
-    border-color: #555;
-    align-self: flex-start; /* Align received messages to the left */
-    text-align: left;
-}
-
-.message:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
-}
-
-.message-content {
-    margin: 0;
-}
-
-.message-time {
-    font-size: 0.65em;
-    color: #888;
-    margin-top: 4px;
-}
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        padding-bottom: 50px;
+        max-height: calc(100vh - 110px);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .message {
+        padding: 8px 12px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+        border: 1px solid #444;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        word-wrap: break-word;
+        min-width: 50px;
+        max-width: 65%;
+        align-self: flex-start;
+    }
+    .message.sent {
+        background: linear-gradient(135deg, #0066cc, #003366);
+        border-color: #0056b3;
+        align-self: flex-end;
+        text-align: right;
+    }
+    .message.received {
+        background: linear-gradient(135deg, #333333, #444444);
+        border-color: #555;
+        align-self: flex-start;
+        text-align: left;
+    }
+    .message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+    }
+    .message-content {
+        margin: 0;
+    }
+    .message-time {
+        font-size: 0.65em;
+        color: #888;
+        margin-top: 4px;
+    }
     .chat-input {
         display: flex;
         padding: 10px;
@@ -175,7 +165,7 @@
         width: 100%;
         z-index: 1000;
         box-sizing: border-box;
-        height: 50px; /* Explicit height */
+        height: 50px;
     }
     .chat-input input {
         flex: 1;
@@ -261,23 +251,20 @@
         background: linear-gradient(135deg, #5a6268, #4a4e53);
         transform: translateY(-2px);
     }
-    /* Custom Scrollbar Styles */
-    /* For WebKit-based browsers (Chrome, Safari, Edge) */
     ::-webkit-scrollbar {
-        width: 6px; /* Thinner scrollbar */
+        width: 6px;
     }
     ::-webkit-scrollbar-track {
-        background: #000000; /* Pure black track */
+        background: #000000;
         border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb {
-        background: #0056b3; /* Solid dark blue thumb */
+        background: #0056b3;
         border-radius: 3px;
     }
-    /* For Firefox */
     .chat-history {
-        scrollbar-width: thin; /* Thinner scrollbar */
-        scrollbar-color: #0056b3 #000000; /* Dark blue thumb, black track */
+        scrollbar-width: thin;
+        scrollbar-color: #0056b3 #000000;
     }
 </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
@@ -306,7 +293,6 @@
         </div>
     </div>
 
-    <!-- Delete Chat Popup -->
     <div class="modal" id="deleteChatModal">
         <div class="modal-content">
             <p>Are you sure you want to delete this chat?</p>
@@ -332,6 +318,7 @@
         const defaultDP = 'defaultdp.png';
 
         let currentUserId, recipientId, recipientUsername, currentUser, recipientName;
+        let lastDisplayedMinute = null; // Track last displayed minute
 
         window.onload = async function() {
             try {
@@ -413,6 +400,7 @@
 
                 const chatHistory = document.getElementById('chatHistory');
                 chatHistory.innerHTML = '';
+                lastDisplayedMinute = null; // Reset for new chat load
                 response.documents.forEach(message => {
                     displayMessage(message);
                 });
@@ -426,9 +414,24 @@
             const chatHistory = document.getElementById('chatHistory');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${message.senderId === currentUserId ? 'sent' : 'received'}`;
+            
+            const date = new Date(message.timestamp);
+            const timeString = date.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            const currentMinute = date.getHours() * 60 + date.getMinutes();
+            let timeDisplay = '';
+            
+            if (lastDisplayedMinute === null || currentMinute !== lastDisplayedMinute) {
+                timeDisplay = `<div class="message-time">${timeString}</div>`;
+                lastDisplayedMinute = currentMinute;
+            }
+            
             messageDiv.innerHTML = `
                 <div class="message-content">${message.content}</div>
-                <div class="message-time">${new Date(message.timestamp).toLocaleTimeString()}</div>
+                ${timeDisplay}
             `;
             chatHistory.appendChild(messageDiv);
         }
@@ -572,5 +575,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e1de7fe85253ff',t:'MTc0NDI4NDE3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
