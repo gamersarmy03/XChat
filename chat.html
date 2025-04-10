@@ -334,8 +334,24 @@
 
         function onInputBlur() {
             const chatInput = document.querySelector('.chat-input');
-            chatInput.classList.remove('active');
+            // Use a timeout to check if the keyboard is still visible
+            setTimeout(() => {
+                if (document.activeElement !== document.getElementById('messageInput')) {
+                    chatInput.classList.remove('active');
+                }
+            }, 100); // Small delay to detect keyboard dismissal
         }
+
+        // Additional check on window resize to handle keyboard dismissal
+        let lastHeight = window.innerHeight;
+        window.addEventListener('resize', () => {
+            const chatInput = document.querySelector('.chat-input');
+            const currentHeight = window.innerHeight;
+            if (currentHeight > lastHeight) { // Keyboard likely dismissed
+                chatInput.classList.remove('active');
+            }
+            lastHeight = currentHeight;
+        });
 
         window.onload = async function() {
             try {
@@ -479,6 +495,8 @@
                 );
                 console.log('Message sent successfully:', response);
                 messageInput.value = '';
+                const chatInput = document.querySelector('.chat-input');
+                chatInput.classList.remove('active'); // Reset position after sending
             } catch (error) {
                 console.error('Error sending message:', error);
                 alert('Failed to send message: ' + error.message);
@@ -585,10 +603,14 @@
         document.addEventListener('click', function(event) {
             const menuContainer = document.querySelector('.menu-container');
             const modal = document.getElementById('deleteChatModal');
+            const chatInput = document.querySelector('.chat-input');
             if (!menuContainer.contains(event.target) && (!modal || modal.style.display !== 'flex')) {
                 const menuOptions = document.getElementById('menuOptions');
                 console.log('Closing menu due to outside click');
                 menuOptions.style.display = 'none';
+                if (!document.getElementById('messageInput').matches(':focus')) {
+                    chatInput.classList.remove('active'); // Reset input bar position on screen tap
+                }
             }
         });
     </script>
