@@ -17,9 +17,9 @@
             overflow: hidden;
             -webkit-overflow-scrolling: touch;
             -webkit-user-select: none; /* Safari */
-            -moz-user-select: none; /* Firefox */
-            -ms-user-select: none; /* IE/Edge */
-            user-select: none; /* Standard */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE/Edge */
+    user-select: none; /* Standard */
         }
         .header {
             padding: 10px;
@@ -164,7 +164,7 @@
             display: flex;
             padding: 10px;
             background-color: #000000;
-            border-top: 1px就在这里添加图片、链接或上传文件。border: 1px solid #333;
+            border-top: 1px solid #333;
             align-items: center;
             position: fixed;
             bottom: 0;
@@ -496,9 +496,40 @@ document.addEventListener('contextmenu', function(e) {
                 ${timeDisplay}
             `;
 
-            messageDiv.addEventListener('contextmenu', (e) => {
+            // Add long-press detection
+            let pressTimer;
+            const longPressDuration = 500; // 500ms for long press
+
+            // Touch events for mobile
+            messageDiv.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                showMessageContextMenu(e, message);
+                pressTimer = setTimeout(() => {
+                    showMessageContextMenu(e, message);
+                }, longPressDuration);
+            });
+
+            messageDiv.addEventListener('touchend', () => {
+                clearTimeout(pressTimer);
+            });
+
+            messageDiv.addEventListener('touchmove', () => {
+                clearTimeout(pressTimer);
+            });
+
+            // Mouse events for desktop
+            messageDiv.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                pressTimer = setTimeout(() => {
+                    showMessageContextMenu(e, message);
+                }, longPressDuration);
+            });
+
+            messageDiv.addEventListener('mouseup', () => {
+                clearTimeout(pressTimer);
+            });
+
+            messageDiv.addEventListener('mousemove', () => {
+                clearTimeout(pressTimer);
             });
 
             chatHistory.appendChild(messageDiv);
@@ -631,8 +662,11 @@ document.addEventListener('contextmenu', function(e) {
 
             const menu = document.createElement('div');
             menu.className = 'message-context-menu';
-            menu.style.left = `${event.pageX}px`;
-            menu.style.top = `${event.pageY}px`;
+            const x = event.type.includes('touch') ? event.touches[0].pageX : event.pageX;
+            const y = event.type.includes('touch') ? event.touches[0].pageY : event.pageY;
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            menu.style.display = 'block';
 
             const isSent = message.senderId === currentUserId;
             const options = isSent 
