@@ -6,7 +6,272 @@
     <title>Chat - XChit</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
-        /* Existing styles remain unchanged, adding new styles for context menu */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        .header {
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #000000;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1100;
+            border-bottom: 1px solid #333;
+            height: 50px;
+            box-sizing: border-box;
+        }
+        .profile-container {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .profile-pic {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .chat-title {
+            margin: 0;
+            font-size: 18px;
+            font-weight: normal;
+        }
+        .chat-title .recipient-name {
+            color: #ffffff;
+            margin: 0;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .chat-title .verified-tick {
+            width: 16px;
+            height: 16px;
+            margin-left: 5px;
+        }
+        .chat-title .recipient-username {
+            color: #cccccc;
+            font-size: 14px;
+            margin: 0;
+        }
+        .menu-container {
+            padding: 5px;
+            position: relative;
+            z-index: 1200;
+        }
+        .menu-icon {
+            font-size: 24px;
+            cursor: pointer;
+            color: #ffffff;
+            display: block;
+            line-height: 1;
+        }
+        .menu-options {
+            display: none;
+            position: absolute;
+            top: calc(100% + 5px);
+            right: 0;
+            background-color: #222;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            padding: 5px;
+            z-index: 1300;
+            min-width: 120px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .menu-item {
+            padding: 5px 10px;
+            cursor: pointer;
+            color: #ffffff;
+        }
+        .menu-item:hover {
+            background-color: #333;
+        }
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            margin-top: 60px;
+            margin-bottom: 60px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            padding-bottom: 70px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: max-height 0.3s ease;
+        }
+        .message {
+            padding: 8px 12px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border: 1px solid #444;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            position: relative;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            word-wrap: break-word;
+            min-width: 50px;
+            max-width: 65%;
+            align-self: flex-start;
+        }
+        .message.sent {
+            background: linear-gradient(135deg, #0066cc, #003366);
+            border-color: #0056b3;
+            align-self: flex-end;
+            text-align: right;
+        }
+        .message.received {
+            background: linear-gradient(135deg, #333333, #444444);
+            border-color: #555;
+            align-self: flex-start;
+            text-align: left;
+        }
+        .message:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+        }
+        .message-content {
+            margin: 0;
+        }
+        .message-time {
+            font-size: 0.65em;
+            color: #888;
+            margin-top: 4px;
+        }
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background-color: #000000;
+            border-top: 1px就在这里添加图片、链接或上传文件。border: 1px solid #333;
+            align-items: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+            box-sizing: border-box;
+            height: 60px;
+            transition: transform 0.3s ease;
+        }
+        .chat-input.active {
+            transform: translateY(-250px);
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            background-color: #000000;
+            color: #ffffff;
+            border: 1px solid #2c2c2c;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+        .chat-input input:focus {
+            border-color: #007bff;
+            background-color: #222;
+        }
+        .chat-input button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: #ffffff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+        }
+        .chat-input button:hover {
+            background: linear-gradient(135deg, #0056b3, #003366);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.5);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            color: #ffffff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        .modal-content label {
+            display: block;
+            margin: 10px 0;
+        }
+        .modal-buttons {
+            margin-top: 20px;
+        }
+        .modal-btn {
+            padding: 8px 18px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            color: #ffffff;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+        .modal-btn.ok {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+        .modal-btn.ok:hover {
+            background: linear-gradient(135deg, #0056b3, #003366);
+            transform: translateY(-2px);
+        }
+        .modal-btn.cancel {
+            background: linear-gradient(135deg, #6c757d, #5a6268);
+        }
+        .modal-btn.cancel:hover {
+            background: linear-gradient(135deg, #5a6268, #4a4e53);
+            transform: translateY(-2px);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0056b3;
+            border-radius: 3px;
+        }
+        .chat-history {
+            scrollbar-width: thin;
+            scrollbar-color: #0056b3 #000000;
+        }
         .message-context-menu {
             display: none;
             position: absolute;
@@ -27,13 +292,12 @@
             background-color: #333;
         }
         .context-menu-item.unsend {
-            color: #ff0000; /* Red text for Unsend */
+            color: #ff0000;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
-    <!-- Existing HTML structure remains unchanged -->
     <div class="header">
         <div class="profile-container" onclick="viewUserProfile(event)">
             <img id="recipientProfilePic" class="profile-pic" alt="Recipient Profile Picture">
@@ -82,7 +346,7 @@
         const defaultDP = 'defaultdp.png';
 
         let currentUserId, recipientId, recipientUsername, currentUser, recipientName;
-        let lastDisplayedMinuteshear = null;
+        let lastDisplayedMinute = null;
 
         function onInputFocus() {
             const chatInput = document.querySelector('.chat-input');
@@ -203,33 +467,31 @@
             const chatHistory = document.getElementById('chatHistory');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${message.senderId === currentUserId ? 'sent' : 'received'}`;
-            messageDiv.dataset.messageId = message.$id; // Store message ID
-            
+            messageDiv.dataset.messageId = message.$id;
+
             const date = new Date(message.timestamp);
             const timeString = date.toLocaleTimeString([], { 
                 hour: '2-digit', 
                 minute: '2-digit' 
             });
-            
+
             const currentMinute = date.getHours() * 60 + date.getMinutes();
             let timeDisplay = '';
-            
             if (lastDisplayedMinute === null || currentMinute !== lastDisplayedMinute) {
                 timeDisplay = `<div class="message-time">${timeString}</div>`;
                 lastDisplayedMinute = currentMinute;
             }
-            
+
             messageDiv.innerHTML = `
                 <div class="message-content">${message.content}</div>
                 ${timeDisplay}
             `;
-            
-            // Add long-press event listener
+
             messageDiv.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 showMessageContextMenu(e, message);
             });
-            
+
             chatHistory.appendChild(messageDiv);
         }
 
@@ -354,7 +616,6 @@
             }
         }
 
-        // New function to show context menu on long press
         function showMessageContextMenu(event, message) {
             const existingMenu = document.querySelector('.message-context-menu');
             if (existingMenu) existingMenu.remove();
@@ -383,7 +644,6 @@
 
             document.body.appendChild(menu);
 
-            // Close menu on outside click
             document.addEventListener('click', function closeMenu(e) {
                 if (!menu.contains(e.target)) {
                     menu.remove();
@@ -392,7 +652,6 @@
             }, { once: true });
         }
 
-        // Handle context menu actions
         async function handleMessageAction(action, message) {
             const messageId = message.$id;
             const chatHistory = document.getElementById('chatHistory');
