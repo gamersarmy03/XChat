@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - XChit</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --primary-color: #333;
+            --hover-color: #444;
+            --border-color: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+        }
+
+        .profile-container {
+            text-align: center;
+            padding: 20px;
+            background: #000000;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 2px solid var(--border-color);
+            transition: transform 0.3s ease;
+        }
+
+        .profile-pic:hover {
+            transform: scale(1.1);
+        }
+
+        .edit-btn, .logout-btn, .remove-dp-btn, .back-btn {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-btn:hover, .logout-btn:hover, .remove-dp-btn:hover, .back-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        .edit-input {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 8px;
+            margin: 5px 0;
+            width: 250px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .user-name {
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .verified-tick {
+            width: 18px;
+            height: 18px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* Modern Custom Popup Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #222;
+            padding: 20px 30px;
+            border-radius: 10px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content p {
+            margin: 0 0 20px 0;
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .modal-btn:hover {
+            background-color: var(--hover-color);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.2"></script>
+</head>
+<body>
+    <div class="profile-container">
+        <img id="profilePic" class="profile-pic" alt="Profile Picture">
+        <div>
+            <button class="edit-btn" onclick="changeDP()">Change DP</button>
+            <button class="remove-dp-btn" onclick="removeDP()">Remove DP</button>
+        </div>
+        <h2 id="userName" class="user-name"></h2>
+        <button class="edit-btn" onclick="toggleEditName()">Change Name</button>
+        <input type="text" id="nameInput" class="edit-input" placeholder="Enter new name" onkeyup="updateName(event)">
+        <p id="userUsername"></p>
+        <button class="edit-btn" onclick="toggleEditUsername()">Change Username</button>
+        <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
+        <p id="userEmail"></p>
+        <button class="logout-btn" onclick="signOut()">Logout</button>
+        <button class="back-btn" onclick="goBack()">Back to Home</button>
+    </div>
+
+    <!-- Modern Custom Popup -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn" onclick="closeModal(true)">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const client = new Appwrite.Client()
+            .setEndpoint('https://cloud.appwrite.io/v1')
+            .setProject('67ed2822002be4a5e417');
+
+        const account = new Appwrite.Account(client);
+        const databases = new Appwrite.Databases(client);
+        const storage = new Appwrite.Storage(client);
+        const bucketId = '67ef59d4002282002e07';
+        const defaultDP = 'defaultdp.png';
+
+        const modal = document.getElementById('modal');
+        const modalMessage = document.getElementById('modalMessage');
+
+        // Modern Popup Function
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal(action = false) {
+            modal.style.display = 'none';
+            if (action) {
+                // Handle OK action if needed
+            }
+            // Refocus the last active input
+            const activeInput = document.querySelector('.edit-input[style*="block"]');
+            if (activeInput) activeInput.focus();
+        }
+
+        // Event listener for outside click to close modal
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(false);
+        });
+
+        window.onload = async () => {
+            try {
+                await account.get();
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const user = await databases.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId
+                );
+
+                let profilePicUrl = defaultDP;
+                if (user.profilepicture && user.profilepicture !== defaultDP) {
+                    profilePicUrl = user.profilepicture.startsWith('http')
+                        ? user.profilepicture
+                        : `${client.config.endpoint}/storage/buckets/${bucketId}/files/${user.profilepicture}/view?project=${client.config.project}`;
+                }
+
+                let verifiedTick = '';
+                if (user.username === 'anmolverma') {
+                    verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
+                } else if (['gamersarmy03@gmail.com', 'puspasoni95@gmail.com'].includes(user.email)) {
+                    verifiedTick = `<img src="gold.png" class="verified-tick" alt="Gold Verified Tick">`;
+                }
+
+                document.getElementById('profilePic').src = profilePicUrl;
+                document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('userUsername').textContent = `@${user.username}`;
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showModal(`Failed to load profile: ${error.message}`);
+            }
+        };
+
+        function changeDP() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = uploadDP;
+            input.click();
+        }
+
+        async function uploadDP(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                showModal('No file selected for profile picture.');
+                return;
+            }
+
+            try {
+                const userId = localStorage.getItem('userId');
+                if (!userId) throw new Error('No user ID found');
+
+                const user = await databases.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId
+                );
+
+                if (user.profilepicture && user.profilepicture !== defaultDP && !user.profilepicture.startsWith('http')) {
+                    await storage.deleteFile(bucketId, user.profilepicture).catch(console.warn);
+                }
+
+                const response = await storage.createFile(bucketId, Appwrite.ID.unique(), file);
+                await databases.updateDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId,
+                    { profilepicture: response.$id }
+                );
+
+                const fileUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${response.$id}/view?project=${client.config.project}`;
+                document.getElementById('profilePic').src = fileUrl;
+                showModal('Profile picture updated successfully!');
+            } catch (error) {
+                console.error('Error uploading DP:', error);
+                showModal(`Failed to update profile picture: ${error.message}`);
+            }
+        }
+
+        async function removeDP() {
+            try {
+                const userId = localStorage.getItem('userId');
+                const user = await databases.getDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId
+                );
+
+                if (user.profilepicture && user.profilepicture !== defaultDP && !user.profilepicture.startsWith('http')) {
+                    await storage.deleteFile(bucketId, user.profilepicture).catch(console.warn);
+                }
+
+                await databases.updateDocument(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    userId,
+                    { profilepicture: defaultDP }
+                );
+                document.getElementById('profilePic').src = defaultDP;
+                showModal('Profile picture removed successfully!');
+            } catch (error) {
+                console.error('Error removing DP:', error);
+                showModal(`Failed to remove profile picture: ${error.message}`);
+            }
+        }
+
+        function toggleEditName() {
+            const nameInput = document.getElementById('nameInput');
+            nameInput.style.display = nameInput.style.display === 'block' ? 'none' : 'block';
+            if (nameInput.style.display === 'block') {
+                nameInput.value = document.getElementById('userName').textContent.replace(/<[^>]*>/g, '');
+                nameInput.focus();
+            }
+        }
+
+        async function updateName(event) {
+            if (event.key === 'Enter') {
+                const newName = event.target.value.trim();
+                if (!newName) {
+                    showModal('Name cannot be empty.');
+                    return;
+                }
+
+                try {
+                    const userId = localStorage.getItem('userId');
+                    await databases.updateDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId,
+                        { name: newName }
+                    );
+                    const user = await databases.getDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId
+                    );
+                    let verifiedTick = '';
+                    if (user.username === 'anmolverma') verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
+                    else if (['gamersarmy03@gmail.com', 'puspasoni95@gmail.com'].includes(user.email))
+                        verifiedTick = `<img src="gold.png" class="verified-tick" alt="Gold Verified Tick">`;
+                    document.getElementById('userName').innerHTML = `${newName}${verifiedTick}`;
+                    event.target.style.display = 'none';
+                    showModal('Name updated successfully!');
+                } catch (error) {
+                    console.error('Error updating name:', error);
+                    showModal(`Failed to update name: ${error.message}`);
+                }
+            }
+        }
+
+        function toggleEditUsername() {
+            const usernameInput = document.getElementById('usernameInput');
+            usernameInput.style.display = usernameInput.style.display === 'block' ? 'none' : 'block';
+            if (usernameInput.style.display === 'block') {
+                usernameInput.value = document.getElementById('userUsername').textContent.slice(1) || '';
+                usernameInput.focus();
+            }
+        }
+
+        async function updateUsername(event) {
+            if (event.key === 'Enter') {
+                const newUsername = event.target.value.trim().toLowerCase();
+                if (!newUsername) {
+                    showModal('Username cannot be empty.');
+                    return;
+                }
+
+                try {
+                    const userId = localStorage.getItem('userId');
+                    const response = await databases.listDocuments(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        [Appwrite.Query.equal('username', newUsername), Appwrite.Query.notEqual('$id', userId)]
+                    );
+
+                    if (response.total > 0) {
+                        showModal(`Username "${newUsername}" is already taken. Please choose a different username.`);
+                        return;
+                    }
+
+                    await databases.updateDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId,
+                        { username: newUsername }
+                    );
+
+                    document.getElementById('userUsername').textContent = `@${newUsername}`;
+                    event.target.style.display = 'none';
+                    const user = await databases.getDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId
+                    );
+                    let verifiedTick = '';
+                    if (newUsername === 'anmolverma') verifiedTick = `<img src="blue.png" class="verified-tick" alt="Blue Verified Tick">`;
+                    else if (['gamersarmy03@gmail.com', 'puspasoni95@gmail.com'].includes(user.email))
+                        verifiedTick = `<img src="gold.png" class="verified-tick" alt="Gold Verified Tick">`;
+                    document.getElementById('userName').innerHTML = `${user.name}${verifiedTick}`;
+                    showModal('Username updated successfully!');
+                } catch (error) {
+                    console.error('Error updating username:', error);
+                    showModal(`Failed to update username: ${error.message}`);
+                }
+            }
+        }
+
+        async function signOut() {
+            try {
+                await account.deleteSession('current');
+                localStorage.removeItem('userId');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Error signing out:', error);
+                showModal(`Failed to sign out: ${error.message}`);
+            }
+        }
+
+        function goBack() {
+            window.location.href = 'home.html';
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b6954bfca153b7',t:'MTc0MzgzMDI4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
