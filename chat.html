@@ -16,6 +16,11 @@
         flex-direction: column;
         overflow: hidden;
         -webkit-overflow-scrolling: touch;
+        -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE/Edge */
+    user-select: none; /* Standard */
+        
     }
     .header {
         padding: 10px;
@@ -325,6 +330,11 @@
 
         let currentUserId, recipientId, recipientUsername, currentUser, recipientName;
         let lastDisplayedMinute = null;
+
+        // Prevent context menu (right-click/long-press)
+document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+});
 
         function onInputFocus() {
             const chatInput = document.querySelector('.chat-input');
