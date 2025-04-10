@@ -14,7 +14,7 @@
         height: 100vh;
         display: flex;
         flex-direction: column;
-        overflow: hidden; /* Prevent body scroll */
+        overflow: hidden;
     }
     .header {
         padding: 10px;
@@ -27,7 +27,7 @@
         width: 100%;
         z-index: 1100;
         border-bottom: 1px solid #333;
-        height: 50px; /* Explicit height */
+        height: 50px;
         box-sizing: border-box;
     }
     .profile-container {
@@ -66,7 +66,7 @@
     .menu-container {
         padding: 5px;
         position: relative;
-        z-index: 1200; /* Above header content */
+        z-index: 1200;
     }
     .menu-icon {
         font-size: 24px;
@@ -74,9 +74,6 @@
         color: #ffffff;
         display: block;
         line-height: 1;
-        /* Fallback if ⋮ doesn't render */
-        /* Uncomment the following if needed: */
-        /* background-color: red; */ /* For debugging */
     }
     .menu-options {
         display: none;
@@ -87,7 +84,7 @@
         border: 1px solid #ffffff;
         border-radius: 5px;
         padding: 5px;
-        z-index: 1300; /* Above all */
+        z-index: 1300;
         min-width: 120px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
@@ -103,67 +100,61 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 0; /* Remove padding to avoid extra space */
-        margin-top: 60px; /* Header height + padding */
-        margin-bottom: 60px; /* Input height + padding */
+        padding: 0;
+        margin-top: 60px;
+        margin-bottom: 60px;
         overflow: hidden;
         box-sizing: border-box;
     }
     .chat-history {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    padding-bottom: 50px; /* Match input height to prevent overlap */
-    max-height: calc(100vh - 110px); /* Adjusted height */
-    box-sizing: border-box;
-    display: flex; /* Add flex to container */
-    flex-direction: column; /* Stack messages vertically */
-    gap: 10px; /* Optional: Adds spacing between messages */
-}
-
-.message {
-    padding: 8px 12px;
-    border-radius: 15px;
-    background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-    border: 1px solid #444;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    position: relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    word-wrap: break-word;
-    /* Dynamic width with min and max constraints */
-    min-width: 60px; /* Minimum width for short messages */
-    max-width: 65%; /* Maximum width limit */
-    align-self: flex-start; /* Default alignment for received messages */
-}
-
-.message.sent {
-    background: linear-gradient(135deg, #0066cc, #003366);
-    border-color: #0056b3;
-    align-self: flex-end; /* Align sent messages to the right */
-    text-align: right;
-}
-
-.message.received {
-    background: linear-gradient(135deg, #333333, #444444);
-    border-color: #555;
-    align-self: flex-start; /* Align received messages to the left */
-    text-align: left;
-}
-
-.message:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
-}
-
-.message-content {
-    margin: 0;
-}
-
-.message-time {
-    font-size: 0.65em;
-    color: #888;
-    margin-top: 4px;
-}
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        padding-bottom: 50px;
+        max-height: calc(100vh - 110px);
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .message {
+        padding: 8px 12px;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+        border: 1px solid #444;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        word-wrap: break-word;
+        min-width: 50px;
+        max-width: 80%;
+        align-self: flex-start;
+    }
+    .message.sent {
+        background: linear-gradient(135deg, #0066cc, #003366);
+        border-color: #0056b3;
+        align-self: flex-end;
+        text-align: right;
+    }
+    .message.received {
+        background: linear-gradient(135deg, #333333, #444444);
+        border-color: #555;
+        align-self: flex-start;
+        text-align: left;
+    }
+    .message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+    }
+    .message-content {
+        margin: 0;
+    }
+    .message-time {
+        font-size: 0.65em;
+        color: #888;
+        margin-top: 4px;
+        text-align: right;
+    }
     .chat-input {
         display: flex;
         padding: 10px;
@@ -175,7 +166,7 @@
         width: 100%;
         z-index: 1000;
         box-sizing: border-box;
-        height: 50px; /* Explicit height */
+        height: 50px;
     }
     .chat-input input {
         flex: 1;
@@ -262,24 +253,48 @@
         transform: translateY(-2px);
     }
     /* Custom Scrollbar Styles */
-    /* For WebKit-based browsers (Chrome, Safari, Edge) */
     ::-webkit-scrollbar {
-        width: 6px; /* Thinner scrollbar */
+        width: 6px;
     }
     ::-webkit-scrollbar-track {
-        background: #000000; /* Pure black track */
+        background: #000000;
         border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb {
-        background: #0056b3; /* Solid dark blue thumb */
+        background: #0056b3;
         border-radius: 3px;
     }
-    /* For Firefox */
     .chat-history {
-        scrollbar-width: thin; /* Thinner scrollbar */
-        scrollbar-color: #0056b3 #000000; /* Dark blue thumb, black track */
+        scrollbar-width: thin;
+        scrollbar-color: #0056b3 #000000;
     }
-</style>
+
+    /* Media Query for Mobile Devices */
+    @media (max-width: 768px) {
+        .message {
+            min-width: 50px;
+            max-width: 90%;
+            padding: 6px 10px;
+            font-size: 14px;
+        }
+        .chat-history {
+            padding: 5px;
+            padding-bottom: 40px;
+            max-height: calc(100vh - 100px);
+        }
+        .chat-input {
+            height: 40px;
+        }
+        .chat-input input {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .chat-input button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+    }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
 </head>
 <body>
@@ -431,6 +446,7 @@
                 <div class="message-time">${new Date(message.timestamp).toLocaleTimeString()}</div>
             `;
             chatHistory.appendChild(messageDiv);
+            scrollToBottom(); // Ensure scroll after each message
         }
 
         async function sendMessage(event) {
@@ -444,7 +460,7 @@
             }
 
             try {
-                console.log('Sending message:', content);
+                console.log('Sending message:', content); // Debug log
                 const response = await database.createDocument(
                     '67ed2a13003e4a7f3cf6',
                     '67ef778a000d39f89fd4',
@@ -457,8 +473,10 @@
                         timestamp: new Date().toISOString()
                     }
                 );
-                console.log('Message sent successfully:', response);
+                console.log('Message sent successfully:', response); // Debug log
                 messageInput.value = '';
+                // Force re-render of chat history to ensure the latest message appears
+                await loadChatHistory();
             } catch (error) {
                 console.error('Error sending message:', error);
                 alert('Failed to send message: ' + error.message);
@@ -475,7 +493,6 @@
                         (message.senderId === recipientId && message.recipientId === currentUserId)
                     ) {
                         displayMessage(message);
-                        scrollToBottom();
                     }
                 }
             );
@@ -572,5 +589,7 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e1de7fe85253ff',t:'MTc0NDI4NDE3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e1de7fe85253ff',t:'MTc0NDI4NDE3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e22e9768a36761',t:'MTc0NDI4NzQ1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>
