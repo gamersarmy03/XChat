@@ -314,7 +314,13 @@
                         userId
                     );
 
-                    const originalFile = document.querySelector('input[type="file"]').files[0];
+                    const fileInput = document.querySelector('input[type="file"]');
+                    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                        showModal('No file selected for upload.');
+                        return;
+                    }
+
+                    const originalFile = fileInput.files[0];
                     const croppedFile = new File([croppedBlob], 'profile_cropped.jpg', { type: 'image/jpeg' });
                     const originalResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), originalFile);
                     const croppedResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), croppedFile);
@@ -346,18 +352,28 @@
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
+            input.style.display = 'none'; // Hide the input
+            document.body.appendChild(input); // Append to DOM to maintain context
+
             input.onchange = (event) => {
                 const file = event.target.files[0];
                 if (!file) {
                     showModal('No file selected for profile picture.');
+                    document.body.removeChild(input); // Clean up
                     return;
                 }
-
                 const reader = new FileReader();
-                reader.onload = (e) => showCropModal(e.target.result);
-                reader.onerror = () => showModal('Error reading the image file.');
+                reader.onload = (e) => {
+                    showCropModal(e.target.result);
+                    document.body.removeChild(input); // Clean up after reading
+                };
+                reader.onerror = () => {
+                    showModal('Error reading the image file.');
+                    document.body.removeChild(input); // Clean up on error
+                };
                 reader.readAsDataURL(file);
             };
+
             input.click();
         }
 
