@@ -289,9 +289,6 @@
                 cropper.destroy();
                 cropper = null;
             }
-            if (!selectedFile) {
-                showModal('No file selected for upload.');
-            }
         }
 
         async function cropAndUpload() {
@@ -343,7 +340,7 @@
 
                     const croppedUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${croppedResponse.$id}/view?project=${client.config.project}`;
                     document.getElementById('profilePic').src = croppedUrl;
-                    closeCropModal();
+                    closeCropModal(); // Close the modal on success
                     showModal('Profile picture updated successfully!');
                     selectedFile = null; // Reset after successful upload
                 } catch (error) {
