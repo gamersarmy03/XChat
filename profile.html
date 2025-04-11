@@ -25,9 +25,9 @@
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
             -webkit-user-select: none; /* Safari */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE/Edge */
-    user-select: none; /* Standard */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE/Edge */
+            user-select: none; /* Standard */
         }
 
         .profile-container {
@@ -51,7 +51,7 @@
             transform: scale(1.1);
         }
 
-        .edit-btn, .logout-btn, .remove-dp-btn, .back-btn {
+        .edit-btn, .logout-btn, .remove-dp-btn, .help-btn {
             background-color: var(--primary-color);
             color: var(--text-color);
             padding: 8px 16px;
@@ -63,7 +63,11 @@
             transition: background-color 0.3s ease;
         }
 
-        .edit-btn:hover, .logout-btn:hover, .remove-dp-btn:hover, .back-btn:hover {
+        .logout-btn {
+            color: #ff0000; /* Red text for logout */
+        }
+
+        .edit-btn:hover, .logout-btn:hover, .remove-dp-btn:hover, .help-btn:hover {
             background-color: var(--hover-color);
         }
 
@@ -165,7 +169,7 @@
         <input type="text" id="usernameInput" class="edit-input" placeholder="Enter username" onkeyup="updateUsername(event)">
         <p id="userEmail"></p>
         <button class="logout-btn" onclick="signOut()">Logout</button>
-        <button class="back-btn" onclick="goBack()">Back to Home</button>
+        <button class="help-btn" onclick="goToHelp()">Help?</button>
     </div>
 
     <!-- Modern Custom Popup -->
@@ -437,9 +441,9 @@
             }
         }
 
-        function goBack() {
-            window.location.href = 'home.html';
+        function goToHelp() {
+            window.location.href = 'help.html';
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92b6954bfca153b7',t:'MTc0MzgzMDI4OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
