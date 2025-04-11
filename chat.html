@@ -518,22 +518,27 @@
 
         async function handleBotInteraction(content) {
             try {
+                console.log('Handling bot interaction for content:', content);
                 const awaitingPassword = await checkAwaitingPassword();
+                console.log('Awaiting password:', awaitingPassword);
                 if (awaitingPassword) {
+                    console.log('Attempting to update password with:', content);
                     await updateUserPassword(content);
                     await sendBotMessage('The password is saved, now you are also able to login with username password.');
                     await clearAwaitingPassword();
                 } else if (content.toLowerCase() === '/updatepassword') {
+                    console.log('Received /updatepassword command');
                     await sendBotMessage('Send me desired password.');
                     await setAwaitingPassword();
                 }
             } catch (error) {
-                console.error('Bot interaction error:', error);
-                await sendBotMessage('Sorry, something went wrong. Please try again.');
+                console.error('Bot interaction error:', error, 'Code:', error.code, 'Message:', error.message);
+                await sendBotMessage(`Sorry, something went wrong: ${error.message}. Please try again.`);
             }
         }
 
         async function sendBotMessage(content) {
+            console.log('Sending bot message:', content);
             await database.createDocument(
                 '67ed2a13003e4a7f3cf6',
                 '67ef778a000d39f89fd4',
@@ -555,6 +560,7 @@
                     '67f8a9150036eefc23bc', // Replace with actual collection ID
                     [Appwrite.Query.equal('userId', currentUserId)]
                 );
+                console.log('Password request check response:', response);
                 return response.documents.length > 0;
             } catch (error) {
                 console.error('Error checking password request:', error);
@@ -573,8 +579,10 @@
                         requestedAt: new Date().toISOString()
                     }
                 );
+                console.log('Password request set for user:', currentUserId);
             } catch (error) {
                 console.error('Error setting password request:', error);
+                throw error; // Re-throw to catch in handleBotInteraction
             }
         }
 
@@ -592,18 +600,25 @@
                         doc.$id
                     );
                 }
+                console.log('Password request cleared for user:', currentUserId);
             } catch (error) {
                 console.error('Error clearing password request:', error);
+                throw error; // Re-throw to catch in handleBotInteraction
             }
         }
 
         async function updateUserPassword(password) {
             try {
-                const user = await account.get(); // Get current authenticated user
-                await account.updateEmailPassword('gamersarmy03@gmail.com', password);
+                const user = await account.get();
+                console.log('Current user:', user);
+                if (!user.email) {
+                    throw new Error('No email associated with this account.');
+                }
+                await account.updateEmailPassword(user.email, password);
+                console.log('Password updated successfully for email:', user.email);
             } catch (error) {
-                console.error('Error updating password:', error);
-                throw error;
+                console.error('Error updating password:', error, 'Code:', error.code, 'Message:', error.message);
+                throw error; // Re-throw to catch in handleBotInteraction
             }
         }
 
@@ -718,6 +733,6 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e280874e20b01c',t:'MTc0NDI5MDgxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e7e5d87cfebca8',t:'MTc0NDM0NzE0OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e7f3ebfbfebca8',t:'MTc0NDM0NzQwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
