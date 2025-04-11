@@ -294,6 +294,7 @@
         async function cropAndUpload() {
             if (!cropper) {
                 showModal('Cropper not initialized. Please try again.');
+                closeCropModal(); // Close modal even on failure
                 return;
             }
 
@@ -304,8 +305,11 @@
 
             if (!canvas) {
                 showModal('Cropping failed. Please try again.');
+                closeCropModal(); // Close modal even on failure
                 return;
             }
+
+            closeCropModal(); // Close modal immediately after "Check" is clicked
 
             canvas.toBlob(async (croppedBlob) => {
                 try {
@@ -340,7 +344,6 @@
 
                     const croppedUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${croppedResponse.$id}/view?project=${client.config.project}`;
                     document.getElementById('profilePic').src = croppedUrl;
-                    closeCropModal(); // Close the modal on success
                     showModal('Profile picture updated successfully!');
                     selectedFile = null; // Reset after successful upload
                 } catch (error) {
