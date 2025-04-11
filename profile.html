@@ -247,6 +247,7 @@
         const cropModal = document.getElementById('cropModal');
         let cropper;
         let originalImageId = null;
+        let selectedFile = null; // Store the selected file globally
 
         // Existing Modal Functions
         function showModal(message) {
@@ -288,10 +289,16 @@
                 cropper.destroy();
                 cropper = null;
             }
+            if (!selectedFile) {
+                showModal('No file selected for upload.');
+            }
         }
 
         async function cropAndUpload() {
-            if (!cropper) return;
+            if (!cropper) {
+                showModal('Cropper not initialized. Please try again.');
+                return;
+            }
 
             const canvas = cropper.getCroppedCanvas({
                 width: 120, // Match profile pic display size
@@ -314,15 +321,13 @@
                         userId
                     );
 
-                    const fileInput = document.querySelector('input[type="file"]');
-                    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                    if (!selectedFile) {
                         showModal('No file selected for upload.');
                         return;
                     }
 
-                    const originalFile = fileInput.files[0];
                     const croppedFile = new File([croppedBlob], 'profile_cropped.jpg', { type: 'image/jpeg' });
-                    const originalResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), originalFile);
+                    const originalResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), selectedFile);
                     const croppedResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), croppedFile);
 
                     originalImageId = originalResponse.$id; // Store original image ID
@@ -340,6 +345,7 @@
                     document.getElementById('profilePic').src = croppedUrl;
                     closeCropModal();
                     showModal('Profile picture updated successfully!');
+                    selectedFile = null; // Reset after successful upload
                 } catch (error) {
                     console.error('Error uploading cropped DP:', error);
                     showModal(`Failed to update profile picture: ${error.message}`);
@@ -362,6 +368,7 @@
                     document.body.removeChild(input); // Clean up
                     return;
                 }
+                selectedFile = file; // Store the selected file
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     showCropModal(e.target.result);
