@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help - XChit</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --primary-color: #333;
+            --hover-color: #444;
+            --border-color: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .help-container {
+            text-align: left;
+            padding: 20px;
+            background: #000000;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+
+        .faq-item {
+            margin-bottom: 10px;
+        }
+
+        .faq-question {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question:hover {
+            background-color: var(--hover-color);
+        }
+
+        .faq-answer {
+            display: none;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .faq-answer.active {
+            display: block;
+        }
+
+        .arrow {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .arrow.active {
+            transform: rotate(180deg);
+        }
+
+        .back-btn {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px auto;
+            display: block;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background-color: var(--hover-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="help-container">
+        <h1>Help & Support</h1>
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleAnswer(this)">
+                How do I update my password?
+                <span class="arrow">▼</span>
+            </div>
+            <div class="faq-answer">
+                To update your password, go to X and search for @xchit, then send a message with the format: "/updatepassword yourdesiredpassword".
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleAnswer(this)">
+                How do I log in with a username and password?
+                <span class="arrow">▼</span>
+            </div>
+            <div class="faq-answer">
+                First, update your password as described above. Once your password is updated, you can log in using your username and password, as well as your Google account.
+            </div>
+        </div>
+        <button class="back-btn" onclick="goBack()">Back to Profile</button>
+    </div>
+
+    <script>
+        function toggleAnswer(element) {
+            const answer = element.nextElementSibling;
+            const arrow = element.querySelector('.arrow');
+            const isActive = answer.classList.contains('active');
+
+            // Close all other answers
+            document.querySelectorAll('.faq-answer').forEach(ans => {
+                ans.classList.remove('active');
+            });
+            document.querySelectorAll('.arrow').forEach(arr => {
+                arr.classList.remove('active');
+            });
+
+            // Toggle the clicked answer
+            if (!isActive) {
+                answer.classList.add('active');
+                arrow.classList.add('active');
+            }
+        }
+
+        function goBack() {
+            window.location.href = 'profile.html';
+        }
+    </script>
+</body>
+</html>
