@@ -40,9 +40,44 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            margin-bottom: 10px;
         }
         .login-btn:hover {
             background-color: #cccccc;
+        }
+        .spacer {
+            height: 20px; /* Blank space between Google and username/password */
+        }
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .login-input {
+            background-color: #222;
+            color: #ffffff;
+            border: 1px solid #555;
+            border-radius: 5px;
+            padding: 10px;
+            width: 200px;
+            font-size: 14px;
+        }
+        .login-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .form-login-btn {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .form-login-btn:hover {
+            background-color: #0056b3;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@17.0.1"></script>
@@ -51,6 +86,12 @@
     <div class="login-container">
         <img src="logo.png" alt="Logo" class="logo">
         <button class="login-btn" onclick="loginWithGoogle()">Sign in with Google</button>
+        <div class="spacer"></div> <!-- Blank space -->
+        <div class="login-form">
+            <input type="text" id="username" class="login-input" placeholder="Enter username">
+            <input type="password" id="password" class="login-input" placeholder="Enter password">
+            <button class="form-login-btn" onclick="loginWithEmail()">Login</button>
+        </div>
         <div class="loading" id="loading">Loading...</div>
         <div class="error" id="error"></div>
     </div>
@@ -74,19 +115,57 @@
                     window.location.origin + '/index.html'
                 );
             } catch (error) {
-                console.error('Login error:', error);
-                showError('Login failed: ' + error.message);
+                console.error('Google login error:', error);
+                showError('Google login failed: ' + error.message);
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
-        async function handlePostLogin() {
+        async function loginWithEmail() {
+            const usernameInput = document.getElementById('username').value.trim();
+            const passwordInput = document.getElementById('password').value.trim();
+
+            if (!usernameInput || !passwordInput) {
+                showError('Please enter both username and password.');
+                return;
+            }
+
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+
+                // Find user by username
+                const response = await database.listDocuments(
+                    '67ed2a13003e4a7f3cf6',
+                    '67ee9da70025aa03c173',
+                    [Appwrite.Query.equal('username', usernameInput)]
+                );
+
+                if (response.documents.length === 0) {
+                    throw new Error('Username not found.');
+                }
+
+                const user = response.documents[0];
+                const email = user.email;
+
+                // Attempt login with email and password
+                await account.createEmailPasswordSession(email, passwordInput);
+
+                // Post-login handling
+                await handlePostLogin(user.$id);
+            } catch (error) {
+                console.error('Email login error:', error);
+                showError('Login failed: ' + (error.message || 'Invalid credentials.'));
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function handlePostLogin(userId) {
             try {
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('error').style.display = 'none';
 
                 const user = await account.get();
-                const userId = user.$id;
 
                 try {
                     await database.getDocument(
@@ -121,7 +200,7 @@
                             '67ee9da70025aa03c173',
                             userId,
                             {
-                                name: user.name,
+                                name: user.name || 'User',
                                 username: username,
                                 email: user.email,
                                 profilepicture: user.prefs?.picture || ''
@@ -151,11 +230,13 @@
         window.onload = async function() {
             try {
                 await account.get();
-                await handlePostLogin();
+                const user = await account.get();
+                await handlePostLogin(user.$id);
             } catch (error) {
                 console.log('User not logged in, waiting for login action.');
             }
         };
     </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92e7c559ad6044d7',t:'MTc0NDM0NjA1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
