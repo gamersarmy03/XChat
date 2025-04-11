@@ -557,7 +557,7 @@
             try {
                 const response = await database.listDocuments(
                     '67ed2a13003e4a7f3cf6',
-                    '67f8a9150036eefc23bc', // Replace with actual collection ID
+                    '67f8a9150036eefc23bc', // Updated to your collection ID
                     [Appwrite.Query.equal('userId', currentUserId)]
                 );
                 console.log('Password request check response:', response);
@@ -572,7 +572,7 @@
             try {
                 await database.createDocument(
                     '67ed2a13003e4a7f3cf6',
-                    '67f8a9150036eefc23bc', // Replace with actual collection ID
+                    '67f8a9150036eefc23bc', // Updated to your collection ID
                     currentUserId,
                     {
                         userId: currentUserId,
@@ -590,13 +590,13 @@
             try {
                 const response = await database.listDocuments(
                     '67ed2a13003e4a7f3cf6',
-                    '67f8a9150036eefc23bc', // Replace with actual collection ID
+                    '67f8a9150036eefc23bc', // Updated to your collection ID
                     [Appwrite.Query.equal('userId', currentUserId)]
                 );
                 for (const doc of response.documents) {
                     await database.deleteDocument(
                         '67ed2a13003e4a7f3cf6',
-                        'password_requests',
+                        '67f8a9150036eefc23bc',
                         doc.$id
                     );
                 }
@@ -607,15 +607,17 @@
             }
         }
 
-        async function updateUserPassword(password) {
+        async function updateUserPassword(newPassword) {
             try {
                 const user = await account.get();
                 console.log('Current user:', user);
                 if (!user.email) {
                     throw new Error('No email associated with this account.');
                 }
-                await account.updateEmailPassword(user.email, password);
-                console.log('Password updated successfully for email:', user.email);
+
+                // Attempt to set the password using createEmailPasswordSession (for initial setup)
+                await account.createEmailPasswordSession(user.email, newPassword);
+                console.log('Password set successfully for email:', user.email);
             } catch (error) {
                 console.error('Error updating password:', error, 'Code:', error.code, 'Message:', error.message);
                 throw error; // Re-throw to catch in handleBotInteraction
