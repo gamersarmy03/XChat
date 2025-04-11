@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - XChit</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <!-- Cropper.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
         :root {
             --bg-color: #000000;
@@ -24,10 +26,10 @@
             margin: 0;
             font-family: 'Arial', sans-serif;
             line-height: 1.6;
-            -webkit-user-select: none; /* Safari */
-            -moz-user-select: none; /* Firefox */
-            -ms-user-select: none; /* IE/Edge */
-            user-select: none; /* Standard */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
 
         .profile-container {
@@ -45,6 +47,7 @@
             margin-bottom: 20px;
             border: 2px solid var(--border-color);
             transition: transform 0.3s ease;
+            cursor: pointer;
         }
 
         .profile-pic:hover {
@@ -95,7 +98,40 @@
             vertical-align: middle;
         }
 
-        /* Modern Custom Popup Styles */
+        /* Crop Modal Styles */
+        .crop-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .crop-content {
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .crop-image {
+            max-width: 100%;
+            max-height: 400px;
+        }
+
+        .crop-buttons {
+            margin-top: 10px;
+        }
+
+        /* Existing Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -131,13 +167,13 @@
             font-size: 16px;
         }
 
-        .modal-buttons {
+        .modal-buttons, .crop-buttons {
             display: flex;
             justify-content: center;
             gap: 10px;
         }
 
-        .modal-btn {
+        .modal-btn, .crop-btn {
             background-color: var(--primary-color);
             color: var(--text-color);
             padding: 10px 20px;
@@ -148,15 +184,17 @@
             transition: background-color 0.3s ease;
         }
 
-        .modal-btn:hover {
+        .modal-btn:hover, .crop-btn:hover {
             background-color: var(--hover-color);
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.2"></script>
+    <!-- Cropper.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
 <body>
     <div class="profile-container">
-        <img id="profilePic" class="profile-pic" alt="Profile Picture">
+        <img id="profilePic" class="profile-pic" alt="Profile Picture" onclick="openOriginalImage()">
         <div>
             <button class="edit-btn" onclick="changeDP()">Change DP</button>
             <button class="remove-dp-btn" onclick="removeDP()">Remove DP</button>
@@ -172,12 +210,23 @@
         <button class="help-btn" onclick="goToHelp()">Help?</button>
     </div>
 
-    <!-- Modern Custom Popup -->
+    <!-- Existing Modal -->
     <div class="modal" id="modal">
         <div class="modal-content">
             <p id="modalMessage"></p>
             <div class="modal-buttons">
                 <button class="modal-btn" onclick="closeModal(true)">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crop Modal -->
+    <div class="crop-modal" id="cropModal">
+        <div class="crop-content">
+            <img id="cropImage" class="crop-image">
+            <div class="crop-buttons">
+                <button class="crop-btn" onclick="cropAndUpload()">Check</button>
+                <button class="crop-btn" onclick="closeCropModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -195,8 +244,11 @@
 
         const modal = document.getElementById('modal');
         const modalMessage = document.getElementById('modalMessage');
+        const cropModal = document.getElementById('cropModal');
+        let cropper;
+        let originalImageId = null;
 
-        // Modern Popup Function
+        // Existing Modal Functions
         function showModal(message) {
             modalMessage.textContent = message;
             modal.style.display = 'flex';
@@ -207,15 +259,114 @@
             if (action) {
                 // Handle OK action if needed
             }
-            // Refocus the last active input
             const activeInput = document.querySelector('.edit-input[style*="block"]');
             if (activeInput) activeInput.focus();
         }
 
-        // Event listener for outside click to close modal
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal(false);
-        });
+        // Crop Modal Functions
+        function showCropModal(imageSrc) {
+            const cropImage = document.getElementById('cropImage');
+            cropImage.src = imageSrc;
+            cropModal.style.display = 'flex';
+
+            // Initialize Cropper.js
+            cropper = new Cropper(cropImage, {
+                aspectRatio: 1, // Square crop (1:1) to match profile pic
+                viewMode: 1,
+                autoCropArea: 1,
+                movable: true,
+                zoomable: true,
+                rotatable: false,
+                scalable: false,
+                cropBoxResizable: true
+            });
+        }
+
+        function closeCropModal() {
+            cropModal.style.display = 'none';
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }
+
+        async function cropAndUpload() {
+            if (!cropper) return;
+
+            const canvas = cropper.getCroppedCanvas({
+                width: 120, // Match profile pic display size
+                height: 120
+            });
+
+            if (!canvas) {
+                showModal('Cropping failed. Please try again.');
+                return;
+            }
+
+            canvas.toBlob(async (croppedBlob) => {
+                try {
+                    const userId = localStorage.getItem('userId');
+                    if (!userId) throw new Error('No user ID found');
+
+                    const user = await databases.getDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId
+                    );
+
+                    const originalFile = document.querySelector('input[type="file"]').files[0];
+                    const croppedFile = new File([croppedBlob], 'profile_cropped.jpg', { type: 'image/jpeg' });
+                    const originalResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), originalFile);
+                    const croppedResponse = await storage.createFile(bucketId, Appwrite.ID.unique(), croppedFile);
+
+                    originalImageId = originalResponse.$id; // Store original image ID
+                    await databases.updateDocument(
+                        '67ed2a13003e4a7f3cf6',
+                        '67ee9da70025aa03c173',
+                        userId,
+                        { 
+                            profilepicture: croppedResponse.$id,
+                            originalpicture: originalResponse.$id // Store original image ID in database
+                        }
+                    );
+
+                    const croppedUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${croppedResponse.$id}/view?project=${client.config.project}`;
+                    document.getElementById('profilePic').src = croppedUrl;
+                    closeCropModal();
+                    showModal('Profile picture updated successfully!');
+                } catch (error) {
+                    console.error('Error uploading cropped DP:', error);
+                    showModal(`Failed to update profile picture: ${error.message}`);
+                }
+            }, 'image/jpeg');
+        }
+
+        // Modified Change DP Function
+        function changeDP() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    showModal('No file selected for profile picture.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => showCropModal(e.target.result);
+                reader.onerror = () => showModal('Error reading the image file.');
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
+        function openOriginalImage() {
+            if (originalImageId) {
+                const originalUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${originalImageId}/view?project=${client.config.project}`;
+                window.open(originalUrl, '_blank');
+            }
+        }
 
         window.onload = async () => {
             try {
@@ -233,10 +384,12 @@
                 );
 
                 let profilePicUrl = defaultDP;
+                let originalImageIdFromDB = user.originalpicture || null;
                 if (user.profilepicture && user.profilepicture !== defaultDP) {
                     profilePicUrl = user.profilepicture.startsWith('http')
                         ? user.profilepicture
                         : `${client.config.endpoint}/storage/buckets/${bucketId}/files/${user.profilepicture}/view?project=${client.config.project}`;
+                    originalImageId = originalImageIdFromDB;
                 }
 
                 let verifiedTick = '';
@@ -256,52 +409,6 @@
             }
         };
 
-        function changeDP() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = uploadDP;
-            input.click();
-        }
-
-        async function uploadDP(event) {
-            const file = event.target.files[0];
-            if (!file) {
-                showModal('No file selected for profile picture.');
-                return;
-            }
-
-            try {
-                const userId = localStorage.getItem('userId');
-                if (!userId) throw new Error('No user ID found');
-
-                const user = await databases.getDocument(
-                    '67ed2a13003e4a7f3cf6',
-                    '67ee9da70025aa03c173',
-                    userId
-                );
-
-                if (user.profilepicture && user.profilepicture !== defaultDP && !user.profilepicture.startsWith('http')) {
-                    await storage.deleteFile(bucketId, user.profilepicture).catch(console.warn);
-                }
-
-                const response = await storage.createFile(bucketId, Appwrite.ID.unique(), file);
-                await databases.updateDocument(
-                    '67ed2a13003e4a7f3cf6',
-                    '67ee9da70025aa03c173',
-                    userId,
-                    { profilepicture: response.$id }
-                );
-
-                const fileUrl = `${client.config.endpoint}/storage/buckets/${bucketId}/files/${response.$id}/view?project=${client.config.project}`;
-                document.getElementById('profilePic').src = fileUrl;
-                showModal('Profile picture updated successfully!');
-            } catch (error) {
-                console.error('Error uploading DP:', error);
-                showModal(`Failed to update profile picture: ${error.message}`);
-            }
-        }
-
         async function removeDP() {
             try {
                 const userId = localStorage.getItem('userId');
@@ -314,14 +421,18 @@
                 if (user.profilepicture && user.profilepicture !== defaultDP && !user.profilepicture.startsWith('http')) {
                     await storage.deleteFile(bucketId, user.profilepicture).catch(console.warn);
                 }
+                if (user.originalpicture && user.originalpicture !== defaultDP && !user.originalpicture.startsWith('http')) {
+                    await storage.deleteFile(bucketId, user.originalpicture).catch(console.warn);
+                }
 
                 await databases.updateDocument(
                     '67ed2a13003e4a7f3cf6',
                     '67ee9da70025aa03c173',
                     userId,
-                    { profilepicture: defaultDP }
+                    { profilepicture: defaultDP, originalpicture: null }
                 );
                 document.getElementById('profilePic').src = defaultDP;
+                originalImageId = null;
                 showModal('Profile picture removed successfully!');
             } catch (error) {
                 console.error('Error removing DP:', error);
