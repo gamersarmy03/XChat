@@ -315,6 +315,15 @@
             </div>
         </div>
     </div>
+    <div class="modal" id="passwordSetupModal">
+        <div class="modal-content">
+            <p>To set a password, you need to log out and log back in with the new password. Click OK to proceed, then log in with your email and the password you set.</p>
+            <div class="modal-buttons">
+                <button class="modal-btn ok" onclick="startPasswordSetup()">OK</button>
+                <button class="modal-btn cancel" onclick="closePasswordSetupModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const client = new Appwrite.Client()
@@ -524,8 +533,9 @@
                 if (awaitingPassword) {
                     console.log('Attempting to update password with:', content);
                     await updateUserPassword(content);
-                    await sendBotMessage('The password is saved, now you are also able to login with username password.');
+                    await sendBotMessage('The password is saved, now you are also able to login with username password. Please log out and log back in with your email and new password.');
                     await clearAwaitingPassword();
+                    showPasswordSetupModal();
                 } else if (content.toLowerCase() === '/updatepassword') {
                     console.log('Received /updatepassword command');
                     await sendBotMessage('Send me desired password.');
@@ -615,13 +625,13 @@
                     throw new Error('No email associated with this account.');
                 }
 
-                // Get the current session JWT
-                const jwt = (await account.getJWT()).jwt;
-                console.log('JWT retrieved:', jwt);
+                // Log out the current session
+                await account.deleteSession('current');
+                console.log('Session logged out');
 
-                // Update the password using the session token
-                await account.updatePassword(newPassword, jwt);
-                console.log('Password updated successfully for email:', user.email);
+                // Create a new email/password session with the new password
+                await account.createEmailPasswordSession(user.email, newPassword);
+                console.log('Password session created for email:', user.email);
             } catch (error) {
                 console.error('Error updating password:', error, 'Code:', error.code, 'Message:', error.message);
                 throw error; // Re-throw to catch in handleBotInteraction
@@ -723,6 +733,27 @@
                 console.error('Error deleting chat:', error);
                 alert('Failed to delete chat: ' + error.message);
             }
+        }
+
+        function showPasswordSetupModal() {
+            const modal = document.getElementById('passwordSetupModal');
+            if (modal) {
+                modal.style.display = 'flex';
+            } else {
+                console.error('Password setup modal not found');
+            }
+        }
+
+        function closePasswordSetupModal() {
+            const modal = document.getElementById('passwordSetupModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        async function startPasswordSetup() {
+            closePasswordSetupModal();
+            window.location.href = 'index.html'; // Redirect to login page after logout
         }
 
         document.addEventListener('click', function(event) {
