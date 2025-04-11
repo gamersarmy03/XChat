@@ -88,23 +88,6 @@
         .arrow.active {
             transform: rotate(180deg);
         }
-
-        .back-btn {
-            background-color: var(--primary-color);
-            color: var(--text-color);
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 10px auto;
-            display: block;
-            font-size: 14px;
-            transition: background-color 0.3s ease;
-        }
-
-        .back-btn:hover {
-            background-color: var(--hover-color);
-        }
     </style>
 </head>
 <body>
@@ -128,7 +111,6 @@
                 First, update your password as described above. Once your password is updated, you can log in using your username and password, as well as your Google account.
             </div>
         </div>
-        <button class="back-btn" onclick="goBack()">Back to Profile</button>
     </div>
 
     <script>
@@ -150,10 +132,6 @@
                 answer.classList.add('active');
                 arrow.classList.add('active');
             }
-        }
-
-        function goBack() {
-            window.location.href = 'profile.html';
         }
     </script>
 </body>
